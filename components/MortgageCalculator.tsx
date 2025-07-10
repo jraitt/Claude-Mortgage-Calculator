@@ -12,6 +12,7 @@ const MortgageCalculator = () => {
     propertyTax: 8000,
     homeInsurance: 1200,
     pmiRate: 0.5,
+    pmiAmount: 0,
     extraMonthlyPrincipal: 0,
     doubleMonthlyPrincipal: false,
     extraAnnualPayment: 0,
@@ -39,12 +40,14 @@ const MortgageCalculator = () => {
   
   // PMI calculation (removed when loan-to-value reaches 78%)
   const ltvRatio = inputs.isExistingLoan ? 
-    (inputs.currentBalance / inputs.homePrice) * 100 : 
+    (inputs.currentBalance / inputs.originalPrincipal) * 100 : 
     (loanAmount / inputs.homePrice) * 100;
-  const monthlyPMI = ltvRatio > 78 ? (loanAmount * (inputs.pmiRate / 100)) / 12 : 0;
+  const monthlyPMI = inputs.isExistingLoan ? 
+    inputs.pmiAmount : 
+    (ltvRatio > 78 ? (loanAmount * (inputs.pmiRate / 100)) / 12 : 0);
   
   // Monthly escrow (taxes + insurance)
-  const monthlyEscrow = (inputs.propertyTax + inputs.homeInsurance) / 12;
+  const monthlyEscrow = inputs.isExistingLoan ? 0 : (inputs.propertyTax + inputs.homeInsurance) / 12;
   
   // Total monthly payment
   const totalMonthlyPayment = monthlyPI + monthlyPMI + monthlyEscrow;
@@ -73,8 +76,12 @@ const MortgageCalculator = () => {
         
         // Add to schedule every 2 payments (monthly equivalent)
         if (paymentNumber % 2 === 0) {
-          const currentLTV = (remainingBalance / inputs.homePrice) * 100;
-          const pmiPayment = currentLTV > 78 ? monthlyPMI : 0;
+          const currentLTV = inputs.isExistingLoan ? 
+            (remainingBalance / inputs.originalPrincipal) * 100 : 
+            (remainingBalance / inputs.homePrice) * 100;
+          const pmiPayment = inputs.isExistingLoan ? 
+            (remainingBalance > 0 ? monthlyPMI : 0) : 
+            (currentLTV > 78 ? monthlyPMI : 0);
           
           schedule.push({
             month: Math.ceil(paymentNumber / 2),
@@ -112,8 +119,12 @@ const MortgageCalculator = () => {
         remainingBalance -= totalPrincipal;
         totalInterestPaid += interestPayment;
         
-        const currentLTV = (remainingBalance / inputs.homePrice) * 100;
-        const pmiPayment = currentLTV > 78 ? monthlyPMI : 0;
+        const currentLTV = inputs.isExistingLoan ? 
+          (remainingBalance / inputs.originalPrincipal) * 100 : 
+          (remainingBalance / inputs.homePrice) * 100;
+        const pmiPayment = inputs.isExistingLoan ? 
+          (remainingBalance > 0 ? monthlyPMI : 0) : 
+          (currentLTV > 78 ? monthlyPMI : 0);
         
         schedule.push({
           month,
@@ -266,15 +277,17 @@ const MortgageCalculator = () => {
                 </div>
                 
                 <div className="grid gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Home Price</label>
-                    <input
-                      type="number"
-                      value={inputs.homePrice}
-                      onChange={(e) => updateInput('homePrice', e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
+                  {!inputs.isExistingLoan && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Home Price</label>
+                      <input
+                        type="number"
+                        value={inputs.homePrice}
+                        onChange={(e) => updateInput('homePrice', e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                  )}
                   
                   {/* Existing Loan Fields */}
                   {inputs.isExistingLoan && (
@@ -369,39 +382,45 @@ const MortgageCalculator = () => {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Annual Property Tax</label>
-                      <input
-                        type="number"
-                        value={inputs.propertyTax}
-                        onChange={(e) => updateInput('propertyTax', e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
+                  {!inputs.isExistingLoan && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Annual Property Tax</label>
+                        <input
+                          type="number"
+                          value={inputs.propertyTax}
+                          onChange={(e) => updateInput('propertyTax', e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Annual Home Insurance</label>
+                        <input
+                          type="number"
+                          value={inputs.homeInsurance}
+                          onChange={(e) => updateInput('homeInsurance', e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Annual Home Insurance</label>
-                      <input
-                        type="number"
-                        value={inputs.homeInsurance}
-                        onChange={(e) => updateInput('homeInsurance', e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
+                  )}
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">PMI Rate (% annual)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {inputs.isExistingLoan ? 'PMI Amount $' : 'PMI Rate (% annual)'}
+                    </label>
                     <input
                       type="number"
                       step="0.01"
-                      value={inputs.pmiRate}
-                      onChange={(e) => updateInput('pmiRate', e.target.value)}
+                      value={inputs.isExistingLoan ? inputs.pmiAmount : inputs.pmiRate}
+                      onChange={(e) => updateInput(inputs.isExistingLoan ? 'pmiAmount' : 'pmiRate', e.target.value)}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <p className="text-sm text-gray-500 mt-1">
-                      {ltvRatio > 78 ? 'PMI Required' : 'No PMI Required'} (LTV: {ltvRatio.toFixed(1)}%)
+                      {inputs.isExistingLoan ? 
+                        'Monthly PMI payment amount' : 
+                        (ltvRatio > 78 ? 'PMI Required' : 'No PMI Required') + ' (LTV: ' + ltvRatio.toFixed(1) + '%)'}
                     </p>
                   </div>
                 </div>
@@ -798,14 +817,18 @@ const MortgageCalculator = () => {
                         <span>Loan-to-Value (LTV):</span>
                         <span className="font-medium">{ltvRatio.toFixed(1)}%</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Down Payment %:</span>
-                        <span className="font-medium">{((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Monthly Payment/Home Price:</span>
-                        <span className="font-medium">{((totalMonthlyPayment / inputs.homePrice) * 100).toFixed(2)}%</span>
-                      </div>
+                      {!inputs.isExistingLoan && (
+                        <div className="flex justify-between">
+                          <span>Down Payment %:</span>
+                          <span className="font-medium">{((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}%</span>
+                        </div>
+                      )}
+                      {!inputs.isExistingLoan && (
+                        <div className="flex justify-between">
+                          <span>Monthly Payment/Home Price:</span>
+                          <span className="font-medium">{((totalMonthlyPayment / inputs.homePrice) * 100).toFixed(2)}%</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -825,7 +848,7 @@ const MortgageCalculator = () => {
                     </div>
                   )}
                   
-                  {((inputs.downPayment / inputs.homePrice) * 100) < 20 && (
+                  {!inputs.isExistingLoan && ((inputs.downPayment / inputs.homePrice) * 100) < 20 && (
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                       <h3 className="font-semibold text-blue-800 mb-2">💡 Down Payment Tip</h3>
                       <p className="text-sm text-blue-700">
