@@ -15,22 +15,32 @@ const MortgageCalculator = () => {
     extraMonthlyPrincipal: 0,
     doubleMonthlyPrincipal: false,
     extraAnnualPayment: 0,
-    biWeeklyPayments: false
+    biWeeklyPayments: false,
+    // New/existing loan fields
+    isExistingLoan: false,
+    loanStartDate: new Date().toISOString().split('T')[0],
+    originalPrincipal: 320000,
+    currentBalance: 300000,
+    paymentsMade: 24
   });
 
   const [activeTab, setActiveTab] = useState('calculator');
 
   // Calculate loan details
-  const loanAmount = inputs.homePrice - inputs.downPayment;
+  const loanAmount = inputs.isExistingLoan ? inputs.currentBalance : inputs.homePrice - inputs.downPayment;
   const monthlyRate = inputs.interestRate / 100 / 12;
-  const totalPayments = inputs.loanTerm * 12;
+  const totalPayments = inputs.isExistingLoan ? 
+    (inputs.loanTerm * 12) - inputs.paymentsMade : 
+    inputs.loanTerm * 12;
   
   // Monthly principal and interest payment
   const monthlyPI = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) / 
                     (Math.pow(1 + monthlyRate, totalPayments) - 1);
   
   // PMI calculation (removed when loan-to-value reaches 78%)
-  const ltvRatio = (loanAmount / inputs.homePrice) * 100;
+  const ltvRatio = inputs.isExistingLoan ? 
+    (inputs.currentBalance / inputs.homePrice) * 100 : 
+    (loanAmount / inputs.homePrice) * 100;
   const monthlyPMI = ltvRatio > 78 ? (loanAmount * (inputs.pmiRate / 100)) / 12 : 0;
   
   // Monthly escrow (taxes + insurance)
@@ -229,6 +239,32 @@ const MortgageCalculator = () => {
                   Loan Details
                 </h2>
                 
+                {/* New/Existing Loan Toggle */}
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="loanType"
+                        checked={!inputs.isExistingLoan}
+                        onChange={() => setInputs(prev => ({ ...prev, isExistingLoan: false }))}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="font-medium">New Loan</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="loanType"
+                        checked={inputs.isExistingLoan}
+                        onChange={() => setInputs(prev => ({ ...prev, isExistingLoan: true }))}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="font-medium">Existing Loan</span>
+                    </label>
+                  </div>
+                </div>
+                
                 <div className="grid gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Home Price</label>
@@ -240,18 +276,71 @@ const MortgageCalculator = () => {
                     />
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
-                    <input
-                      type="number"
-                      value={inputs.downPayment}
-                      onChange={(e) => updateInput('downPayment', e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      {((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}% down
-                    </p>
-                  </div>
+                  {/* Existing Loan Fields */}
+                  {inputs.isExistingLoan && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Loan Start Date</label>
+                        <input
+                          type="date"
+                          value={inputs.loanStartDate}
+                          onChange={(e) => setInputs(prev => ({ ...prev, loanStartDate: e.target.value }))}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Original Principal</label>
+                          <input
+                            type="number"
+                            value={inputs.originalPrincipal}
+                            onChange={(e) => updateInput('originalPrincipal', e.target.value)}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Current Balance</label>
+                          <input
+                            type="number"
+                            value={inputs.currentBalance}
+                            onChange={(e) => updateInput('currentBalance', e.target.value)}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Payments Already Made</label>
+                        <input
+                          type="number"
+                          value={inputs.paymentsMade}
+                          onChange={(e) => updateInput('paymentsMade', e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <p className="text-sm text-gray-500 mt-1">
+                          {inputs.paymentsMade} of {inputs.loanTerm * 12} payments completed
+                        </p>
+                      </div>
+                    </>
+                  )}
+                  
+                  {/* Down Payment - only show for new loans */}
+                  {!inputs.isExistingLoan && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
+                      <input
+                        type="number"
+                        value={inputs.downPayment}
+                        onChange={(e) => updateInput('downPayment', e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        {((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}% down
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -324,7 +413,7 @@ const MortgageCalculator = () => {
                 
                 <div className="grid gap-4">
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <div className="text-sm text-blue-600">Loan Amount</div>
+                    <div className="text-sm text-blue-600">{inputs.isExistingLoan ? 'Current Balance' : 'Loan Amount'}</div>
                     <div className="text-2xl font-bold text-blue-800">{formatCurrency(loanAmount)}</div>
                   </div>
                   
@@ -354,12 +443,28 @@ const MortgageCalculator = () => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-800 mb-3">Loan Summary</h3>
                   <div className="space-y-2 text-sm">
+                    {inputs.isExistingLoan && (
+                      <>
+                        <div className="flex justify-between">
+                          <span>Original Principal:</span>
+                          <span className="font-medium">{formatCurrency(inputs.originalPrincipal)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Payments Made:</span>
+                          <span className="font-medium">{inputs.paymentsMade} of {inputs.loanTerm * 12}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Remaining Payments:</span>
+                          <span className="font-medium">{totalPayments}</span>
+                        </div>
+                      </>
+                    )}
                     <div className="flex justify-between">
-                      <span>Total Interest Paid:</span>
+                      <span>{inputs.isExistingLoan ? 'Remaining Interest:' : 'Total Interest Paid:'}</span>
                       <span className="font-medium">{formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Total Loan Cost:</span>
+                      <span>{inputs.isExistingLoan ? 'Total Remaining Cost:' : 'Total Loan Cost:'}</span>
                       <span className="font-medium">{formatCurrency(loanAmount + (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0))}</span>
                     </div>
                     <div className="flex justify-between">
