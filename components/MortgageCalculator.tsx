@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Calculator, Home, TrendingDown, DollarSign, Calendar, PieChart } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Calculator, Home, TrendingDown, DollarSign, Calendar, PieChart, GitCompare } from 'lucide-react';
 
 const MortgageCalculator = () => {
   const [inputs, setInputs] = useState({
@@ -26,6 +26,11 @@ const MortgageCalculator = () => {
   });
 
   const [activeTab, setActiveTab] = useState('calculator');
+  const [scrollLocked, setScrollLocked] = useState(true);
+  
+  // Refs for synchronized scrolling
+  const standardTableRef = useRef<HTMLDivElement>(null);
+  const paydownTableRef = useRef<HTMLDivElement>(null);
 
   // Calculate loan details
   const loanAmount = inputs.isExistingLoan ? inputs.currentBalance : inputs.homePrice - inputs.downPayment;
@@ -153,6 +158,19 @@ const MortgageCalculator = () => {
       inputs.biWeeklyPayments
     ), [inputs]);
 
+  // Synchronized scroll handlers
+  const handleStandardScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (scrollLocked && paydownTableRef.current) {
+      paydownTableRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
+
+  const handlePaydownScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (scrollLocked && standardTableRef.current) {
+      standardTableRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
+
   const updateInput = (field: string, value: string) => {
     setInputs(prev => ({
       ...prev,
@@ -228,6 +246,13 @@ const MortgageCalculator = () => {
             label="Paydown Strategies" 
             icon={TrendingDown} 
             isActive={activeTab === 'strategies'} 
+            onClick={setActiveTab} 
+          />
+          <TabButton 
+            id="comparison" 
+            label="Schedule Comparison" 
+            icon={GitCompare} 
+            isActive={activeTab === 'comparison'} 
             onClick={setActiveTab} 
           />
           <TabButton 
@@ -754,6 +779,230 @@ const MortgageCalculator = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Schedule Comparison Tab */}
+          {activeTab === 'comparison' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Schedule Comparison</h2>
+              
+              {/* Summary Comparison */}
+              <div className="grid md:grid-cols-3 gap-4 mb-8">
+                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                  <h3 className="font-semibold text-red-800 mb-2">Original Schedule</h3>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Payoff Time:</span>
+                      <span className="font-medium">{standardSchedule.length} months</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Monthly Payment:</span>
+                      <span className="font-medium">{formatCurrency(monthlyPI)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Interest:</span>
+                      <span className="font-medium">{formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0)}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <h3 className="font-semibold text-green-800 mb-2">
+                    {inputs.biWeeklyPayments ? 'Bi-Weekly Strategy' : 
+                     inputs.doubleMonthlyPrincipal ? 'Double Principal Strategy' : 
+                     (inputs.extraMonthlyPrincipal > 0 || inputs.extraAnnualPayment > 0) ? 'Extra Payment Strategy' : 'No Strategy Selected'}
+                  </h3>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Payoff Time:</span>
+                      <span className="font-medium">{paydownSchedule.length} months</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Payment Amount:</span>
+                      <span className="font-medium">
+                        {inputs.biWeeklyPayments ? `${formatCurrency(monthlyPI / 2)} bi-weekly` :
+                         inputs.doubleMonthlyPrincipal ? formatCurrency(monthlyPI + (monthlyPI - (loanAmount * monthlyRate))) :
+                         formatCurrency(monthlyPI + inputs.extraMonthlyPrincipal)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Interest:</span>
+                      <span className="font-medium">{formatCurrency(paydownSchedule[paydownSchedule.length - 1]?.totalInterest || 0)}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h3 className="font-semibold text-blue-800 mb-2">Savings</h3>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Time Saved:</span>
+                      <span className="font-medium text-green-600">{standardSchedule.length - paydownSchedule.length} months</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Interest Saved:</span>
+                      <span className="font-medium text-green-600">
+                        {formatCurrency((standardSchedule[standardSchedule.length - 1]?.totalInterest || 0) - 
+                                     (paydownSchedule[paydownSchedule.length - 1]?.totalInterest || 0))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Early Payoff:</span>
+                      <span className="font-medium text-blue-600">
+                        {new Date(Date.now() + paydownSchedule.length * 30.44 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          year: 'numeric' 
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scroll Lock Control */}
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={() => setScrollLocked(!scrollLocked)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    scrollLocked 
+                      ? 'bg-blue-100 text-blue-800 border border-blue-300 hover:bg-blue-200' 
+                      : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+                  }`}
+                >
+                  {scrollLocked ? '🔒' : '🔓'} {scrollLocked ? 'Unlock' : 'Lock'} Scrolling
+                </button>
+              </div>
+
+              {/* Side-by-Side Schedule Tables */}
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* Original Schedule */}
+                <div className="bg-white rounded-lg border border-gray-200">
+                  <div className="bg-red-50 p-4 border-b border-red-200">
+                    <h3 className="font-semibold text-red-800">Original Schedule</h3>
+                    <p className="text-sm text-red-600">Standard monthly payments</p>
+                  </div>
+                  <div 
+                    ref={standardTableRef}
+                    onScroll={handleStandardScroll}
+                    className={`max-h-[600px] overflow-y-auto ${scrollLocked ? 'border-2 border-blue-200' : ''}`}
+                  >
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 sticky top-0">
+                        <tr>
+                          <th className="text-left p-2 border-b">Month</th>
+                          <th className="text-right p-2 border-b">Payment</th>
+                          <th className="text-right p-2 border-b">Principal</th>
+                          <th className="text-right p-2 border-b">Interest</th>
+                          <th className="text-right p-2 border-b">Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {standardSchedule.map((payment, index) => (
+                          <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="p-2">{payment.month}</td>
+                            <td className="p-2 text-right">{formatCurrency(payment.payment)}</td>
+                            <td className="p-2 text-right">{formatCurrency(payment.principal)}</td>
+                            <td className="p-2 text-right">{formatCurrency(payment.interest)}</td>
+                            <td className="p-2 text-right">{formatCurrency(payment.balance)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Paydown Strategy Schedule */}
+                <div className="bg-white rounded-lg border border-gray-200">
+                  <div className="bg-green-50 p-4 border-b border-green-200">
+                    <h3 className="font-semibold text-green-800">
+                      {inputs.biWeeklyPayments ? 'Bi-Weekly Strategy' : 
+                       inputs.doubleMonthlyPrincipal ? 'Double Principal Strategy' : 
+                       'Enhanced Payment Strategy'}
+                    </h3>
+                    <p className="text-sm text-green-600">
+                      {inputs.biWeeklyPayments ? 'Payment every 2 weeks' : 
+                       inputs.doubleMonthlyPrincipal ? 'Double principal payments' : 
+                       'With extra payments'}
+                    </p>
+                  </div>
+                  <div 
+                    ref={paydownTableRef}
+                    onScroll={handlePaydownScroll}
+                    className={`max-h-[600px] overflow-y-auto ${scrollLocked ? 'border-2 border-blue-200' : ''}`}
+                  >
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 sticky top-0">
+                        <tr>
+                          <th className="text-left p-2 border-b">Month</th>
+                          <th className="text-right p-2 border-b">Payment</th>
+                          <th className="text-right p-2 border-b">Principal</th>
+                          <th className="text-right p-2 border-b">Interest</th>
+                          <th className="text-right p-2 border-b">Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paydownSchedule.map((payment, index) => (
+                          <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="p-2">{payment.month}</td>
+                            <td className="p-2 text-right">{formatCurrency(payment.payment)}</td>
+                            <td className="p-2 text-right">{formatCurrency(payment.principal)}</td>
+                            <td className="p-2 text-right">{formatCurrency(payment.interest)}</td>
+                            <td className="p-2 text-right">{formatCurrency(payment.balance)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Schedule Information */}
+              <div className="mt-6 grid md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-800 mb-2">Original Schedule Details</h4>
+                  <div className="text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span>Total Payments:</span>
+                      <span>{standardSchedule.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Years to Pay Off:</span>
+                      <span>{(standardSchedule.length / 12).toFixed(1)}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-800 mb-2">Strategy Schedule Details</h4>
+                  <div className="text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span>Total Payments:</span>
+                      <span>{paydownSchedule.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Years to Pay Off:</span>
+                      <span>{(paydownSchedule.length / 12).toFixed(1)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {paydownSchedule.length === standardSchedule.length && (
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mt-4">
+                  <p className="text-yellow-800 text-sm">
+                    💡 <strong>Tip:</strong> Select a paydown strategy in the "Paydown Strategies" tab to see the comparison between schedules.
+                  </p>
+                </div>
+              )}
+
+              {scrollLocked && (
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 mt-4">
+                  <p className="text-blue-800 text-sm">
+                    🔒 <strong>Scroll Lock Active:</strong> Both tables will scroll together. Click "Unlock Scrolling" to scroll independently.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
