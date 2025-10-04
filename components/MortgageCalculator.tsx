@@ -1,10 +1,33 @@
 'use client'
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Calculator, Home, TrendingDown, DollarSign, Calendar, PieChart, GitCompare } from 'lucide-react';
+import { Calculator, Home, TrendingDown, DollarSign, Calendar, PieChart, GitCompare, Download } from 'lucide-react';
+import { generateMortgageCSV, downloadCSV, generateFilename } from '../utils/csvExport';
+
+// Define the type for mortgage calculator inputs
+export type MortgageInputs = {
+  homePrice: number;
+  downPayment: number;
+  loanTerm: number;
+  interestRate: number;
+  propertyTax: number;
+  homeInsurance: number;
+  pmiRate: number;
+  pmiAmount: number;
+  extraMonthlyPrincipal: number;
+  doubleMonthlyPrincipal: boolean;
+  extraAnnualPayment: number;
+  biWeeklyPayments: boolean;
+  isExistingLoan: boolean;
+  loanStartDate: string;
+  originalPrincipal: number;
+  currentBalance: number;
+  paymentsMade: number;
+};
 
 const MortgageCalculator = () => {
-  const [inputs, setInputs] = useState({
+  // Default values
+  const defaultInputs: MortgageInputs = {
     homePrice: 400000,
     downPayment: 80000,
     loanTerm: 30,
@@ -23,10 +46,76 @@ const MortgageCalculator = () => {
     originalPrincipal: 320000,
     currentBalance: 300000,
     paymentsMade: 24
-  });
+  };
 
+  // Load saved inputs from localStorage or use defaults
+  const loadSavedInputs = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('mortgageCalculatorInputs');
+        if (saved) {
+          const parsedInputs = JSON.parse(saved);
+          // Ensure all required fields exist (in case we add new fields in the future)
+          return { ...defaultInputs, ...parsedInputs };
+        }
+      } catch (error) {
+        console.warn('Failed to load saved mortgage calculator inputs:', error);
+      }
+    }
+    return defaultInputs;
+  };
+
+  const [inputs, setInputs] = useState<MortgageInputs>(loadSavedInputs);
   const [activeTab, setActiveTab] = useState('calculator');
   const [scrollLocked, setScrollLocked] = useState(true);
+
+  // Save inputs to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('mortgageCalculatorInputs', JSON.stringify(inputs));
+      } catch (error) {
+        console.warn('Failed to save mortgage calculator inputs:', error);
+      }
+    }
+  }, [inputs]);
+
+  // Reset all inputs to defaults
+  const resetToDefaults = () => {
+    if (confirm('Are you sure you want to reset all fields to their default values? This will clear your saved data.')) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('mortgageCalculatorInputs');
+      }
+      setInputs(defaultInputs);
+    }
+  };
+
+  // Download CSV report
+  const handleDownloadCSV = () => {
+    try {
+      const hasPaydownStrategy = inputs.biWeeklyPayments || 
+                               inputs.doubleMonthlyPrincipal || 
+                               inputs.extraMonthlyPrincipal > 0 || 
+                               inputs.extraAnnualPayment > 0;
+
+      const csvContent = generateMortgageCSV(
+        inputs,
+        loanAmount,
+        monthlyPI,
+        monthlyPMI,
+        monthlyEscrow,
+        totalMonthlyPayment,
+        standardSchedule,
+        paydownSchedule
+      );
+
+      const filename = generateFilename(hasPaydownStrategy);
+      downloadCSV(csvContent, filename);
+    } catch (error) {
+      console.error('Failed to generate CSV:', error);
+      alert('Failed to generate CSV report. Please try again.');
+    }
+  };
   
   // Refs for synchronized scrolling
   const standardTableRef = useRef<HTMLDivElement>(null);
@@ -172,7 +261,7 @@ const MortgageCalculator = () => {
   };
 
   const updateInput = (field: string, value: string) => {
-    setInputs(prev => ({
+    setInputs((prev: MortgageInputs) => ({
       ...prev,
       [field]: parseFloat(value) || 0
     }));
@@ -216,11 +305,34 @@ const MortgageCalculator = () => {
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6">
-          <div className="flex items-center gap-3">
-            <Home size={32} />
-            <div>
-              <h1 className="text-3xl font-bold">Professional Mortgage Calculator</h1>
-              <p className="text-blue-100 mt-1">Complete loan analysis with paydown strategies</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Home size={32} />
+              <div>
+                <h1 className="text-3xl font-bold">Professional Mortgage Calculator</h1>
+                <p className="text-blue-100 mt-1">Complete loan analysis with paydown strategies</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-blue-100 text-sm flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                Auto-saving your inputs
+              </div>
+              <button
+                onClick={handleDownloadCSV}
+                className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                title="Download mortgage report as CSV"
+              >
+                <Download size={16} />
+                Download Report
+              </button>
+              <button
+                onClick={resetToDefaults}
+                className="bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                title="Clear all saved data and reset to defaults"
+              >
+                Reset All
+              </button>
             </div>
           </div>
         </div>
@@ -270,10 +382,17 @@ const MortgageCalculator = () => {
             <div className="grid lg:grid-cols-2 gap-8">
               {/* Input Form */}
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                  <DollarSign size={24} />
-                  Loan Details
-                </h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <DollarSign size={24} />
+                    Loan Details
+                  </h2>
+                  {typeof window !== 'undefined' && localStorage.getItem('mortgageCalculatorInputs') && (
+                    <div className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                      ✓ Previous data loaded
+                    </div>
+                  )}
+                </div>
                 
                 {/* New/Existing Loan Toggle */}
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -283,7 +402,7 @@ const MortgageCalculator = () => {
                         type="radio"
                         name="loanType"
                         checked={!inputs.isExistingLoan}
-                        onChange={() => setInputs(prev => ({ ...prev, isExistingLoan: false }))}
+                        onChange={() => setInputs((prev: MortgageInputs) => ({ ...prev, isExistingLoan: false }))}
                         className="w-4 h-4 text-blue-600"
                       />
                       <span className="font-medium">New Loan</span>
@@ -293,7 +412,7 @@ const MortgageCalculator = () => {
                         type="radio"
                         name="loanType"
                         checked={inputs.isExistingLoan}
-                        onChange={() => setInputs(prev => ({ ...prev, isExistingLoan: true }))}
+                        onChange={() => setInputs((prev: MortgageInputs) => ({ ...prev, isExistingLoan: true }))}
                         className="w-4 h-4 text-blue-600"
                       />
                       <span className="font-medium">Existing Loan</span>
@@ -322,7 +441,7 @@ const MortgageCalculator = () => {
                         <input
                           type="date"
                           value={inputs.loanStartDate}
-                          onChange={(e) => setInputs(prev => ({ ...prev, loanStartDate: e.target.value }))}
+                          onChange={(e) => setInputs((prev: MortgageInputs) => ({ ...prev, loanStartDate: e.target.value }))}
                           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -607,7 +726,7 @@ const MortgageCalculator = () => {
                       <input
                         type="checkbox"
                         checked={inputs.biWeeklyPayments}
-                        onChange={(e) => setInputs(prev => ({ 
+                        onChange={(e) => setInputs((prev: MortgageInputs) => ({ 
                           ...prev, 
                           biWeeklyPayments: e.target.checked,
                           // Disable other options when bi-weekly is selected
@@ -644,7 +763,7 @@ const MortgageCalculator = () => {
                       <input
                         type="checkbox"
                         checked={inputs.doubleMonthlyPrincipal}
-                        onChange={(e) => setInputs(prev => ({ 
+                        onChange={(e) => setInputs((prev: MortgageInputs) => ({ 
                           ...prev, 
                           doubleMonthlyPrincipal: e.target.checked,
                           // Disable other options when double monthly is selected
