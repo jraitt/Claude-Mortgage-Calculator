@@ -126,25 +126,28 @@ const MortgageCalculator = () => {
 
   // Calculate loan details
   const loanAmount = inputs.isExistingLoan ? inputs.currentBalance : inputs.homePrice - inputs.downPayment;
-  const monthlyRate = inputs.interestRate / 100 / 12;
-  const totalPayments = inputs.isExistingLoan ? 
-    (inputs.loanTerm * 12) - inputs.paymentsMade : 
+  const monthlyRate = (inputs.interestRate || 0) / 100 / 12;
+  const totalPayments = inputs.isExistingLoan ?
+    (inputs.loanTerm * 12) - inputs.paymentsMade :
     inputs.loanTerm * 12;
-  
+
   // Monthly principal and interest payment
-  const monthlyPI = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) / 
-                    (Math.pow(1 + monthlyRate, totalPayments) - 1);
+  // Handle zero interest rate case
+  const monthlyPI = monthlyRate === 0
+    ? loanAmount / totalPayments
+    : loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) /
+      (Math.pow(1 + monthlyRate, totalPayments) - 1);
   
   // PMI calculation (removed when loan-to-value reaches 78%)
-  const ltvRatio = inputs.isExistingLoan ? 
-    (inputs.currentBalance / inputs.originalPrincipal) * 100 : 
-    (loanAmount / inputs.homePrice) * 100;
-  const monthlyPMI = inputs.isExistingLoan ? 
-    inputs.pmiAmount : 
-    (ltvRatio > 78 ? (loanAmount * (inputs.pmiRate / 100)) / 12 : 0);
-  
+  const ltvRatio = inputs.isExistingLoan ?
+    (inputs.originalPrincipal > 0 ? (inputs.currentBalance / inputs.originalPrincipal) * 100 : 0) :
+    (inputs.homePrice > 0 ? (loanAmount / inputs.homePrice) * 100 : 0);
+  const monthlyPMI = inputs.isExistingLoan ?
+    (inputs.pmiAmount || 0) :
+    (ltvRatio > 78 ? (loanAmount * ((inputs.pmiRate || 0) / 100)) / 12 : 0);
+
   // Monthly escrow (taxes + insurance)
-  const monthlyEscrow = inputs.isExistingLoan ? 0 : (inputs.propertyTax + inputs.homeInsurance) / 12;
+  const monthlyEscrow = inputs.isExistingLoan ? 0 : ((inputs.propertyTax || 0) + (inputs.homeInsurance || 0)) / 12;
   
   // Total monthly payment
   const totalMonthlyPayment = monthlyPI + monthlyPMI + monthlyEscrow;
@@ -271,6 +274,10 @@ const MortgageCalculator = () => {
   };
 
   const formatCurrency = (amount: number) => {
+    // Handle NaN and Infinity
+    if (!isFinite(amount)) {
+      return '$0';
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -280,6 +287,10 @@ const MortgageCalculator = () => {
   };
 
   const formatNumber = (num: number) => {
+    // Handle NaN and Infinity
+    if (!isFinite(num)) {
+      return '0';
+    }
     return new Intl.NumberFormat('en-US').format(Math.round(num));
   };
 
@@ -570,7 +581,7 @@ const MortgageCalculator = () => {
                     <input
                       type="number"
                       step="0.01"
-                      value={inputs.isExistingLoan ? (inputs.pmiAmount || '') : (inputs.pmiRate || '')}
+                      value={inputs.isExistingLoan ? inputs.pmiAmount : inputs.pmiRate}
                       onChange={(e) => updateInput(inputs.isExistingLoan ? 'pmiAmount' : 'pmiRate', e.target.value)}
                       className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                     />
