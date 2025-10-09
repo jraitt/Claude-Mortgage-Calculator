@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Calculator, Home, TrendingDown, DollarSign, Calendar, PieChart, GitCompare, Download, Sun, Moon } from 'lucide-react';
+import { Calculator, Home, TrendingDown, DollarSign, Calendar, PieChart, GitCompare, Download, Sun, Moon, Scale } from 'lucide-react';
 import { generateMortgageCSV, downloadCSV, generateFilename } from '../utils/csvExport';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -24,6 +24,28 @@ export type MortgageInputs = {
   originalPrincipal: number;
   currentBalance: number;
   paymentsMade: number;
+};
+
+// Points calculator types
+export type PointsScenario = {
+  id: string;
+  name: string;
+  rate: number;           // Interest rate %
+  points: number;         // Points as % of loan amount
+  isBaseline: boolean;    // Mark one as the comparison baseline
+};
+
+export type ComparisonResult = {
+  scenario: PointsScenario;
+  monthlyPI: number;
+  pointCost: number;
+  totalInterest: number;
+  totalCost: number;
+  breakEvenMonths: number | null; // vs baseline
+  monthlySavings: number;
+  totalCostAt5Years: number;
+  totalCostAt10Years: number;
+  totalCostAtFullTerm: number;
 };
 
 const MortgageCalculator = () => {
@@ -72,6 +94,49 @@ const MortgageCalculator = () => {
   const [activeTab, setActiveTab] = useState('calculator');
   const [scrollLocked, setScrollLocked] = useState(true);
 
+  // Load saved scenarios from localStorage or use defaults
+  const loadSavedScenarios = (): PointsScenario[] => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('pointsCalculatorScenarios');
+        if (saved) {
+          return JSON.parse(saved);
+        }
+      } catch (error) {
+        console.warn('Failed to load saved points calculator scenarios:', error);
+      }
+    }
+    // Default scenarios from your screenshot
+    return [
+      {
+        id: '1',
+        name: '0 Points',
+        rate: 5.625,
+        points: 0,
+        isBaseline: true
+      },
+      {
+        id: '2',
+        name: '1.0 Points',
+        rate: 5.375,
+        points: 1.0,
+        isBaseline: false
+      },
+      {
+        id: '3',
+        name: '1.625 Points',
+        rate: 5.25,
+        points: 1.625,
+        isBaseline: false
+      }
+    ];
+  };
+
+  // Points calculator state
+  const [scenarios, setScenarios] = useState<PointsScenario[]>(loadSavedScenarios);
+  const [pointsCalcLoanAmount, setPointsCalcLoanAmount] = useState<number>(320000); // Default, will sync with loanAmount
+  const [pointsCalcTerm, setPointsCalcTerm] = useState<number>(30); // Default, will sync with inputs.loanTerm
+
   // Save inputs to localStorage whenever they change
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -83,13 +148,28 @@ const MortgageCalculator = () => {
     }
   }, [inputs]);
 
+  // Save scenarios to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('pointsCalculatorScenarios', JSON.stringify(scenarios));
+      } catch (error) {
+        console.warn('Failed to save points calculator scenarios:', error);
+      }
+    }
+  }, [scenarios]);
+
   // Reset all inputs to defaults
   const resetToDefaults = () => {
     if (confirm('Are you sure you want to reset all fields to their default values? This will clear your saved data.')) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('mortgageCalculatorInputs');
+        localStorage.removeItem('pointsCalculatorScenarios');
       }
       setInputs(defaultInputs);
+      setScenarios(loadSavedScenarios());
+      setPointsCalcLoanAmount(320000);
+      setPointsCalcTerm(20);
     }
   };
 
@@ -245,13 +325,107 @@ const MortgageCalculator = () => {
 
   // Standard schedule and paydown scenarios
   const standardSchedule = useMemo(() => generateAmortizationSchedule(), [inputs]);
-  const paydownSchedule = useMemo(() => 
+  const paydownSchedule = useMemo(() =>
     generateAmortizationSchedule(
-      inputs.extraMonthlyPrincipal, 
-      inputs.doubleMonthlyPrincipal, 
+      inputs.extraMonthlyPrincipal,
+      inputs.doubleMonthlyPrincipal,
       inputs.extraAnnualPayment,
       inputs.biWeeklyPayments
     ), [inputs]);
+
+  // Sync points calculator loan amount and term with main calculator when switching to that tab
+  useEffect(() => {
+    if (activeTab === 'points-calculator') {
+      setPointsCalcLoanAmount(loanAmount);
+      setPointsCalcTerm(inputs.loanTerm);
+    }
+  }, [activeTab, loanAmount, inputs.loanTerm]);
+
+  // Points Comparison Calculation Functions
+  const calculateScenarioMetrics = (scenario: PointsScenario, loanAmt: number, term: number): ComparisonResult => {
+    const monthlyRate = scenario.rate / 100 / 12;
+    const totalPayments = term * 12;
+
+    // Calculate monthly P&I
+    const monthlyPI = monthlyRate === 0
+      ? loanAmt / totalPayments
+      : loanAmt * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) /
+        (Math.pow(1 + monthlyRate, totalPayments) - 1);
+
+    // Calculate point cost
+    const pointCost = loanAmt * (scenario.points / 100);
+
+    // Calculate total interest over loan life
+    let remainingBalance = loanAmt;
+    let totalInterest = 0;
+    for (let month = 1; month <= totalPayments && remainingBalance > 0.01; month++) {
+      const interestPayment = remainingBalance * monthlyRate;
+      const principalPayment = monthlyPI - interestPayment;
+      totalInterest += interestPayment;
+      remainingBalance -= principalPayment;
+    }
+
+    // Total cost = point cost + all payments
+    const totalCost = pointCost + (monthlyPI * totalPayments);
+
+    // Calculate total cost at different time horizons
+    const calculateCostAtMonth = (months: number) => {
+      let balance = loanAmt;
+      const paymentsToCalculate = Math.min(months, totalPayments);
+
+      for (let m = 1; m <= paymentsToCalculate; m++) {
+        const interest = balance * monthlyRate;
+        const principal = monthlyPI - interest;
+        balance -= principal;
+      }
+
+      return pointCost + (monthlyPI * paymentsToCalculate);
+    };
+
+    return {
+      scenario,
+      monthlyPI,
+      pointCost,
+      totalInterest,
+      totalCost,
+      breakEvenMonths: null, // Calculated separately vs baseline
+      monthlySavings: 0, // Calculated separately vs baseline
+      totalCostAt5Years: calculateCostAtMonth(60),
+      totalCostAt10Years: calculateCostAtMonth(120),
+      totalCostAtFullTerm: totalCost
+    };
+  };
+
+  // Calculate break-even vs baseline
+  const calculateBreakEven = (result: ComparisonResult, baseline: ComparisonResult): ComparisonResult => {
+    const pointCostDiff = result.pointCost - baseline.pointCost;
+    const monthlySavings = baseline.monthlyPI - result.monthlyPI;
+
+    let breakEvenMonths = null;
+    if (monthlySavings > 0 && pointCostDiff > 0) {
+      breakEvenMonths = pointCostDiff / monthlySavings;
+    }
+
+    return {
+      ...result,
+      monthlySavings,
+      breakEvenMonths
+    };
+  };
+
+  // Calculate comparison results for all scenarios
+  const comparisonResults = useMemo(() => {
+    const baseline = scenarios.find(s => s.isBaseline);
+    if (!baseline) return [];
+
+    const baselineResult = calculateScenarioMetrics(baseline, pointsCalcLoanAmount, pointsCalcTerm);
+    const results = scenarios.map(scenario => {
+      const result = calculateScenarioMetrics(scenario, pointsCalcLoanAmount, pointsCalcTerm);
+      return scenario.isBaseline ? result : calculateBreakEven(result, baselineResult);
+    });
+
+    return results;
+  }, [scenarios, pointsCalcLoanAmount, pointsCalcTerm]);
 
   // Synchronized scroll handlers
   const handleStandardScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -390,12 +564,19 @@ const MortgageCalculator = () => {
               isActive={activeTab === 'comparison'} 
               onClick={setActiveTab} 
             />
-            <TabButton 
-              id="analysis" 
-              label="Analysis" 
-              icon={PieChart} 
-              isActive={activeTab === 'analysis'} 
-              onClick={setActiveTab} 
+            <TabButton
+              id="analysis"
+              label="Analysis"
+              icon={PieChart}
+              isActive={activeTab === 'analysis'}
+              onClick={setActiveTab}
+            />
+            <TabButton
+              id="points-calculator"
+              label="Points Calculator"
+              icon={Scale}
+              isActive={activeTab === 'points-calculator'}
+              onClick={setActiveTab}
             />
           </div>
         </div>
@@ -1271,6 +1452,331 @@ const MortgageCalculator = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Points Calculator Tab */}
+          {activeTab === 'points-calculator' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Points Calculator</h2>
+                <button
+                  onClick={() => {
+                    const newId = (scenarios.length + 1).toString();
+                    setScenarios([...scenarios, {
+                      id: newId,
+                      name: `Scenario ${newId}`,
+                      rate: 6.0,
+                      points: 0,
+                      isBaseline: false
+                    }]);
+                  }}
+                  className="bg-blue-600 dark:bg-blue-700 hover:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  + Add Scenario
+                </button>
+              </div>
+
+              {/* Common Inputs */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Loan Parameters</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Loan Amount</label>
+                    <input
+                      type="number"
+                      value={pointsCalcLoanAmount}
+                      onChange={(e) => setPointsCalcLoanAmount(parseFloat(e.target.value) || 0)}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Default from Calculator tab: {formatCurrency(loanAmount)}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Loan Term (years)</label>
+                    <select
+                      value={pointsCalcTerm}
+                      onChange={(e) => setPointsCalcTerm(parseInt(e.target.value))}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                    >
+                      <option value={15}>15 years</option>
+                      <option value={20}>20 years</option>
+                      <option value={25}>25 years</option>
+                      <option value={30}>30 years</option>
+                    </select>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Default from Calculator tab: {inputs.loanTerm} years
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scenario Cards */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {scenarios.map((scenario, index) => (
+                  <div
+                    key={scenario.id}
+                    className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 ${
+                      scenario.isBaseline
+                        ? 'border-blue-500 dark:border-blue-400'
+                        : 'border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                        {scenario.points === 0 ? '0 Points' : `${scenario.points}% Points`}
+                      </div>
+                      {scenarios.length > 2 && (
+                        <button
+                          onClick={() => setScenarios(scenarios.filter(s => s.id !== scenario.id))}
+                          className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 ml-2"
+                          title="Remove scenario"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+
+                    <label className="flex items-center gap-2 mb-3 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={scenario.isBaseline}
+                        onChange={(e) => {
+                          const updated = scenarios.map(s => ({
+                            ...s,
+                            isBaseline: s.id === scenario.id ? e.target.checked : false
+                          }));
+                          setScenarios(updated);
+                        }}
+                        className="w-4 h-4 text-blue-600 dark:text-blue-400"
+                      />
+                      <span className="text-blue-700 dark:text-blue-300 font-medium">Set as Baseline</span>
+                    </label>
+
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <label className="block text-gray-600 dark:text-gray-400 mb-1">Interest Rate (%)</label>
+                        <input
+                          type="number"
+                          step="0.001"
+                          value={scenario.rate || ''}
+                          onChange={(e) => {
+                            const updated = [...scenarios];
+                            updated[index].rate = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            setScenarios(updated);
+                          }}
+                          className="w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-gray-600 dark:text-gray-400 mb-1">Points (%)</label>
+                        <input
+                          type="number"
+                          step="0.125"
+                          value={scenario.points}
+                          onChange={(e) => {
+                            const updated = [...scenarios];
+                            updated[index].points = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            setScenarios(updated);
+                          }}
+                          className="w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Cost: {formatCurrency(pointsCalcLoanAmount * ((scenario.points || 0) / 100))}
+                        </p>
+                      </div>
+                    </div>
+
+                    {comparisonResults[index] && (
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Monthly P&I:</span>
+                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                              {formatCurrency(comparisonResults[index].monthlyPI)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Point Cost:</span>
+                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                              {formatCurrency(comparisonResults[index].pointCost)}
+                            </span>
+                          </div>
+                          {!scenario.isBaseline && comparisonResults[index].breakEvenMonths && (
+                            <div className="flex justify-between bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                              <span className="text-blue-700 dark:text-blue-300 font-medium">Break-even:</span>
+                              <span className="font-bold text-blue-800 dark:text-blue-200">
+                                {Math.round(comparisonResults[index].breakEvenMonths!)} months
+                                ({(comparisonResults[index].breakEvenMonths! / 12).toFixed(1)} yrs)
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Break-Even Analysis Summary */}
+              {comparisonResults.length > 0 && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Break-Even Analysis</h3>
+                  <div className="space-y-3">
+                    {comparisonResults.map((result, idx) => {
+                      if (result.scenario.isBaseline) {
+                        return (
+                          <div key={result.scenario.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border-2 border-blue-500 dark:border-blue-400">
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-blue-700 dark:text-blue-300">
+                                📍 {result.scenario.name} (Baseline)
+                              </span>
+                              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                                {formatCurrency(result.monthlyPI)}/mo
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      if (result.breakEvenMonths) {
+                        return (
+                          <div key={result.scenario.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <span className="font-semibold text-gray-800 dark:text-gray-100">{result.scenario.name}</span>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  {result.scenario.rate}% • {result.scenario.points}% points • {formatCurrency(result.monthlyPI)}/mo
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-green-700 dark:text-green-400 font-semibold">
+                                  Saves {formatCurrency(Math.abs(result.monthlySavings))}/mo
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  +{formatCurrency(result.pointCost - comparisonResults.find(r => r.scenario.isBaseline)!.pointCost)} in points
+                                </div>
+                              </div>
+                            </div>
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                                  Break-even in {Math.round(result.breakEvenMonths)} months ({(result.breakEvenMonths / 12).toFixed(1)} years)
+                                </span>
+                                <div className="text-xs text-blue-600 dark:text-blue-400">
+                                  {result.breakEvenMonths < 60 ? '✓ Good deal if staying 5+ years' :
+                                   result.breakEvenMonths < 120 ? '⚠ Only worth it if staying 10+ years' :
+                                   '❌ Takes very long to break even'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Total Cost Comparison at Different Time Horizons */}
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Total Cost Comparison Over Time</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="text-left p-3 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">Scenario</th>
+                        <th className="text-right p-3 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">Rate</th>
+                        <th className="text-right p-3 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">Points</th>
+                        <th className="text-right p-3 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">Monthly P&I</th>
+                        <th className="text-right p-3 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">Point Cost</th>
+                        <th className="text-right p-3 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">5 Years</th>
+                        <th className="text-right p-3 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">10 Years</th>
+                        <th className="text-right p-3 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">Full Term</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comparisonResults.map((result, idx) => {
+                        const costAt5 = result.totalCostAt5Years;
+                        const costAt10 = result.totalCostAt10Years;
+                        const costAtFull = result.totalCostAtFullTerm;
+
+                        const lowestAt5 = Math.min(...comparisonResults.map(r => r.totalCostAt5Years));
+                        const lowestAt10 = Math.min(...comparisonResults.map(r => r.totalCostAt10Years));
+                        const lowestAtFull = Math.min(...comparisonResults.map(r => r.totalCostAtFullTerm));
+
+                        return (
+                          <tr key={result.scenario.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${result.scenario.isBaseline ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                            <td className="p-3 border-b border-gray-100 dark:border-gray-700">
+                              <span className="font-medium text-gray-900 dark:text-gray-100">{result.scenario.name}</span>
+                              {result.scenario.isBaseline && (
+                                <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">Baseline</span>
+                              )}
+                            </td>
+                            <td className="p-3 border-b border-gray-100 dark:border-gray-700 text-right text-gray-900 dark:text-gray-100">{result.scenario.rate.toFixed(3)}%</td>
+                            <td className="p-3 border-b border-gray-100 dark:border-gray-700 text-right text-gray-900 dark:text-gray-100">{result.scenario.points.toFixed(3)}%</td>
+                            <td className="p-3 border-b border-gray-100 dark:border-gray-700 text-right text-gray-900 dark:text-gray-100">{formatCurrency(result.monthlyPI)}</td>
+                            <td className="p-3 border-b border-gray-100 dark:border-gray-700 text-right text-gray-900 dark:text-gray-100">{formatCurrency(result.pointCost)}</td>
+                            <td className={`p-3 border-b border-gray-100 dark:border-gray-700 text-right ${costAt5 === lowestAt5 ? 'bg-green-100 dark:bg-green-900/30 font-bold text-green-800 dark:text-green-200' : 'text-gray-900 dark:text-gray-100'}`}>
+                              {formatCurrency(costAt5)}
+                            </td>
+                            <td className={`p-3 border-b border-gray-100 dark:border-gray-700 text-right ${costAt10 === lowestAt10 ? 'bg-green-100 dark:bg-green-900/30 font-bold text-green-800 dark:text-green-200' : 'text-gray-900 dark:text-gray-100'}`}>
+                              {formatCurrency(costAt10)}
+                            </td>
+                            <td className={`p-3 border-b border-gray-100 dark:border-gray-700 text-right ${costAtFull === lowestAtFull ? 'bg-green-100 dark:bg-green-900/30 font-bold text-green-800 dark:text-green-200' : 'text-gray-900 dark:text-gray-100'}`}>
+                              {formatCurrency(costAtFull)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                  <strong>💡 How to read this table:</strong> Green highlighted cells show the lowest total cost at each time horizon.
+                  This helps you choose the best option based on how long you plan to keep the loan.
+                </div>
+              </div>
+
+              {/* Smart Recommendations */}
+              {comparisonResults.length > 0 && (() => {
+                const bestAt5 = comparisonResults.reduce((min, r) => r.totalCostAt5Years < min.totalCostAt5Years ? r : min);
+                const bestAt10 = comparisonResults.reduce((min, r) => r.totalCostAt10Years < min.totalCostAt10Years ? r : min);
+                const bestAtFull = comparisonResults.reduce((min, r) => r.totalCostAtFullTerm < min.totalCostAtFullTerm ? r : min);
+
+                return (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800">
+                    <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">🎯 Smart Recommendations</h3>
+                    <div className="space-y-3 text-sm">
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <div className="font-semibold text-gray-800 dark:text-gray-100 mb-2">If you keep the loan for 5 years:</div>
+                        <div className="text-green-700 dark:text-green-400">
+                          ✓ Choose <strong>{bestAt5.scenario.name}</strong> - Total cost: {formatCurrency(bestAt5.totalCostAt5Years)}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <div className="font-semibold text-gray-800 dark:text-gray-100 mb-2">If you keep the loan for 10 years:</div>
+                        <div className="text-green-700 dark:text-green-400">
+                          ✓ Choose <strong>{bestAt10.scenario.name}</strong> - Total cost: {formatCurrency(bestAt10.totalCostAt10Years)}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <div className="font-semibold text-gray-800 dark:text-gray-100 mb-2">If you keep the loan for the full {pointsCalcTerm}-year term:</div>
+                        <div className="text-green-700 dark:text-green-400">
+                          ✓ Choose <strong>{bestAtFull.scenario.name}</strong> - Total cost: {formatCurrency(bestAtFull.totalCostAtFullTerm)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded">
+                      <strong>Note:</strong> Most homeowners refinance or move within 7-10 years. Consider this when weighing upfront costs vs. long-term savings.
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
