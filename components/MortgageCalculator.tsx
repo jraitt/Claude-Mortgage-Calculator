@@ -266,7 +266,7 @@ const MortgageCalculator = () => {
   const updateInput = (field: string, value: string) => {
     setInputs((prev: MortgageInputs) => ({
       ...prev,
-      [field]: parseFloat(value) || 0
+      [field]: value === '' ? 0 : (parseFloat(value) || 0)
     }));
   };
 
@@ -518,7 +518,7 @@ const MortgageCalculator = () => {
                       <input
                         type="number"
                         step="0.01"
-                        value={inputs.interestRate}
+                        value={inputs.interestRate || ''}
                         onChange={(e) => updateInput('interestRate', e.target.value)}
                         className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                       />
