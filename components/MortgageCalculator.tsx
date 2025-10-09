@@ -439,7 +439,7 @@ const MortgageCalculator = () => {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Home Price</label>
                       <input
                         type="number"
-                        value={inputs.homePrice}
+                        value={inputs.homePrice || ''}
                         onChange={(e) => updateInput('homePrice', e.target.value)}
                         className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                       />
@@ -464,7 +464,7 @@ const MortgageCalculator = () => {
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Original Principal</label>
                           <input
                             type="number"
-                            value={inputs.originalPrincipal}
+                            value={inputs.originalPrincipal || ''}
                             onChange={(e) => updateInput('originalPrincipal', e.target.value)}
                             className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                           />
@@ -474,7 +474,7 @@ const MortgageCalculator = () => {
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Balance</label>
                           <input
                             type="number"
-                            value={inputs.currentBalance}
+                            value={inputs.currentBalance || ''}
                             onChange={(e) => updateInput('currentBalance', e.target.value)}
                             className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                           />
@@ -485,7 +485,7 @@ const MortgageCalculator = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payments Already Made</label>
                         <input
                           type="number"
-                          value={inputs.paymentsMade}
+                          value={inputs.paymentsMade || ''}
                           onChange={(e) => updateInput('paymentsMade', e.target.value)}
                           className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                         />
@@ -502,7 +502,7 @@ const MortgageCalculator = () => {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Down Payment</label>
                       <input
                         type="number"
-                        value={inputs.downPayment}
+                        value={inputs.downPayment || ''}
                         onChange={(e) => updateInput('downPayment', e.target.value)}
                         className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                       />
@@ -545,7 +545,7 @@ const MortgageCalculator = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Annual Property Tax</label>
                         <input
                           type="number"
-                          value={inputs.propertyTax}
+                          value={inputs.propertyTax || ''}
                           onChange={(e) => updateInput('propertyTax', e.target.value)}
                           className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                         />
@@ -555,7 +555,7 @@ const MortgageCalculator = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Annual Home Insurance</label>
                         <input
                           type="number"
-                          value={inputs.homeInsurance}
+                          value={inputs.homeInsurance || ''}
                           onChange={(e) => updateInput('homeInsurance', e.target.value)}
                           className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                         />
@@ -570,7 +570,7 @@ const MortgageCalculator = () => {
                     <input
                       type="number"
                       step="0.01"
-                      value={inputs.isExistingLoan ? inputs.pmiAmount : inputs.pmiRate}
+                      value={inputs.isExistingLoan ? (inputs.pmiAmount || '') : (inputs.pmiRate || '')}
                       onChange={(e) => updateInput(inputs.isExistingLoan ? 'pmiAmount' : 'pmiRate', e.target.value)}
                       className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                     />
@@ -814,7 +814,7 @@ const MortgageCalculator = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Extra Monthly Principal</label>
                         <input
                           type="number"
-                          value={inputs.extraMonthlyPrincipal}
+                          value={inputs.extraMonthlyPrincipal || ''}
                           onChange={(e) => updateInput('extraMonthlyPrincipal', e.target.value)}
                           className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                           placeholder="0"
@@ -825,7 +825,7 @@ const MortgageCalculator = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Extra Annual Payment</label>
                         <input
                           type="number"
-                          value={inputs.extraAnnualPayment}
+                          value={inputs.extraAnnualPayment || ''}
                           onChange={(e) => updateInput('extraAnnualPayment', e.target.value)}
                           className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
                           placeholder="0"
