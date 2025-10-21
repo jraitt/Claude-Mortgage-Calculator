@@ -4,6 +4,18 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Calculator, Home, TrendingDown, DollarSign, Calendar, PieChart, GitCompare, Download, Sun, Moon, Scale, RefreshCw } from 'lucide-react';
 import { generateMortgageCSV, downloadCSV, generateFilename } from '../utils/csvExport';
 import { useTheme } from '../contexts/ThemeContext';
+import {
+  BREAK_EVEN_EXCELLENT,
+  BREAK_EVEN_GOOD,
+  BREAK_EVEN_MARGINAL,
+  TIME_HORIZON_5_YEARS,
+  TIME_HORIZON_10_YEARS,
+  MINIMUM_BALANCE,
+  MAX_ITERATIONS,
+  PMI_LTV_THRESHOLD,
+  BIWEEKLY_PERIODS_PER_YEAR
+} from '../utils/constants';
+import { validateRefinanceInputs, isValidPrincipalPayment } from '../utils/validation';
 
 // Define the type for mortgage calculator inputs
 export type MortgageInputs = {
@@ -179,6 +191,7 @@ const MortgageCalculator = () => {
     cashOut: 0,
     newPoints: 0
   });
+  const [refinanceValidationErrors, setRefinanceValidationErrors] = useState<string[]>([]);
 
   // Save inputs to localStorage whenever they change
   useEffect(() => {
@@ -267,7 +280,7 @@ const MortgageCalculator = () => {
     (inputs.homePrice > 0 ? (loanAmount / inputs.homePrice) * 100 : 0);
   const monthlyPMI = inputs.isExistingLoan ?
     (inputs.pmiAmount || 0) :
-    (ltvRatio > 78 ? (loanAmount * ((inputs.pmiRate || 0) / 100)) / 12 : 0);
+    (ltvRatio > PMI_LTV_THRESHOLD ? (loanAmount * ((inputs.pmiRate || 0) / 100)) / 12 : 0);
 
   // Monthly escrow (taxes + insurance)
   const monthlyEscrow = inputs.isExistingLoan ? 0 : ((inputs.propertyTax || 0) + (inputs.homeInsurance || 0)) / 12;
@@ -280,32 +293,39 @@ const MortgageCalculator = () => {
     const schedule = [];
     let remainingBalance = loanAmount;
     let totalInterestPaid = 0;
-    
+
     if (biWeekly) {
       // Bi-weekly payments: 26 payments per year = 13 monthly payments
       const biWeeklyPayment = monthlyPI / 2;
-      const biWeeklyRate = inputs.interestRate / 100 / 26; // 26 bi-weekly periods per year
+      const biWeeklyRate = inputs.interestRate / 100 / BIWEEKLY_PERIODS_PER_YEAR;
       let paymentNumber = 1;
-      
-      while (remainingBalance > 0.01 && paymentNumber <= totalPayments * 2) {
+      const maxPayments = Math.min(totalPayments * 2, MAX_ITERATIONS);
+
+      while (remainingBalance > MINIMUM_BALANCE && paymentNumber <= maxPayments) {
         const interestPayment = remainingBalance * biWeeklyRate;
         let principalPayment = biWeeklyPayment - interestPayment;
-        
+
+        // Safety check: prevent negative principal payments
+        if (principalPayment <= 0) {
+          console.warn('Bi-weekly payment too low to cover interest. Stopping amortization.');
+          break;
+        }
+
         // Don't pay more than remaining balance
         principalPayment = Math.min(principalPayment, remainingBalance);
-        
+
         remainingBalance -= principalPayment;
         totalInterestPaid += interestPayment;
-        
+
         // Add to schedule every 2 payments (monthly equivalent)
         if (paymentNumber % 2 === 0) {
-          const currentLTV = inputs.isExistingLoan ? 
-            (remainingBalance / inputs.originalPrincipal) * 100 : 
+          const currentLTV = inputs.isExistingLoan ?
+            (remainingBalance / inputs.originalPrincipal) * 100 :
             (remainingBalance / inputs.homePrice) * 100;
-          const pmiPayment = inputs.isExistingLoan ? 
-            (remainingBalance > 0 ? monthlyPMI : 0) : 
-            (currentLTV > 78 ? monthlyPMI : 0);
-          
+          const pmiPayment = inputs.isExistingLoan ?
+            (remainingBalance > 0 ? monthlyPMI : 0) :
+            (currentLTV > PMI_LTV_THRESHOLD ? monthlyPMI : 0);
+
           schedule.push({
             month: Math.ceil(paymentNumber / 2),
             payment: biWeeklyPayment * 2,
@@ -318,15 +338,22 @@ const MortgageCalculator = () => {
             escrow: monthlyEscrow
           });
         }
-        
+
         paymentNumber++;
       }
     } else {
       // Standard monthly payments
-      for (let month = 1; month <= totalPayments && remainingBalance > 0.01; month++) {
+      const maxMonths = Math.min(totalPayments, MAX_ITERATIONS);
+      for (let month = 1; month <= maxMonths && remainingBalance > MINIMUM_BALANCE; month++) {
         const interestPayment = remainingBalance * monthlyRate;
         let principalPayment = monthlyPI - interestPayment;
-        
+
+        // Safety check: prevent negative principal payments
+        if (principalPayment <= 0) {
+          console.warn('Monthly payment too low to cover interest. Stopping amortization.');
+          break;
+        }
+
         // Add extra payments
         let extraPrincipal = extraMonthly;
         if (doubleMonthly) {
@@ -335,20 +362,20 @@ const MortgageCalculator = () => {
         if (month % 12 === 0) {
           extraPrincipal += extraAnnual;
         }
-        
+
         // Don't pay more than remaining balance
         const totalPrincipal = Math.min(principalPayment + extraPrincipal, remainingBalance);
-        
+
         remainingBalance -= totalPrincipal;
         totalInterestPaid += interestPayment;
-        
-        const currentLTV = inputs.isExistingLoan ? 
-          (remainingBalance / inputs.originalPrincipal) * 100 : 
+
+        const currentLTV = inputs.isExistingLoan ?
+          (remainingBalance / inputs.originalPrincipal) * 100 :
           (remainingBalance / inputs.homePrice) * 100;
-        const pmiPayment = inputs.isExistingLoan ? 
-          (remainingBalance > 0 ? monthlyPMI : 0) : 
-          (currentLTV > 78 ? monthlyPMI : 0);
-        
+        const pmiPayment = inputs.isExistingLoan ?
+          (remainingBalance > 0 ? monthlyPMI : 0) :
+          (currentLTV > PMI_LTV_THRESHOLD ? monthlyPMI : 0);
+
         schedule.push({
           month,
           payment: monthlyPI + extraPrincipal,
@@ -513,10 +540,18 @@ const MortgageCalculator = () => {
     let currentTotalInterest = 0;
     let currentBalance = refInputs.currentBalance;
     const currentMonthlyRate = refInputs.currentRate / 100 / 12;
+    const maxCurrentMonths = Math.min(refInputs.remainingMonths, MAX_ITERATIONS);
 
-    for (let month = 1; month <= refInputs.remainingMonths && currentBalance > 0.01; month++) {
+    for (let month = 1; month <= maxCurrentMonths && currentBalance > MINIMUM_BALANCE; month++) {
       const interestPayment = currentBalance * currentMonthlyRate;
       const principalPayment = refInputs.currentMonthlyPayment - interestPayment;
+
+      // Safety check: prevent negative principal payments from causing infinite loop
+      if (principalPayment <= 0) {
+        console.warn('Current loan payment too low to cover interest. Stopping calculation.');
+        break;
+      }
+
       currentTotalInterest += interestPayment;
       currentBalance -= principalPayment;
     }
@@ -524,10 +559,18 @@ const MortgageCalculator = () => {
     // Calculate total interest for new loan
     let newTotalInterest = 0;
     let newBalance = newLoanAmount;
+    const maxNewMonths = Math.min(newTotalPayments, MAX_ITERATIONS);
 
-    for (let month = 1; month <= newTotalPayments && newBalance > 0.01; month++) {
+    for (let month = 1; month <= maxNewMonths && newBalance > MINIMUM_BALANCE; month++) {
       const interestPayment = newBalance * newMonthlyRate;
       const principalPayment = newMonthlyPayment - interestPayment;
+
+      // Safety check: prevent negative principal payments from causing infinite loop
+      if (principalPayment <= 0) {
+        console.warn('New loan payment too low to cover interest. Stopping calculation.');
+        break;
+      }
+
       newTotalInterest += interestPayment;
       newBalance -= principalPayment;
     }
@@ -541,29 +584,33 @@ const MortgageCalculator = () => {
 
     // Calculate costs at different time horizons
     const calculateCostAtMonths = (months: number) => {
-      const monthsToCalc = Math.min(months, newTotalPayments);
+      const monthsToCalc = Math.min(months, newTotalPayments, MAX_ITERATIONS);
       let balance = newLoanAmount;
 
-      for (let m = 1; m <= monthsToCalc; m++) {
+      for (let m = 1; m <= monthsToCalc && balance > MINIMUM_BALANCE; m++) {
         const interest = balance * newMonthlyRate;
         const principal = newMonthlyPayment - interest;
+
+        // Safety check
+        if (principal <= 0) break;
+
         balance -= principal;
       }
 
       return totalClosingCosts + (newMonthlyPayment * monthsToCalc);
     };
 
-    const costAt5Years = calculateCostAtMonths(60);
-    const costAt10Years = calculateCostAtMonths(120);
+    const costAt5Years = calculateCostAtMonths(TIME_HORIZON_5_YEARS);
+    const costAt10Years = calculateCostAtMonths(TIME_HORIZON_10_YEARS);
     const costAtFullTerm = newTotalCost;
 
-    // Generate recommendation
+    // Generate recommendation using named constants
     let recommendation = '';
-    if (breakEvenMonths < 24) {
+    if (breakEvenMonths < BREAK_EVEN_EXCELLENT) {
       recommendation = 'Excellent! You\'ll break even in less than 2 years. This refinance is highly recommended.';
-    } else if (breakEvenMonths < 60) {
+    } else if (breakEvenMonths < BREAK_EVEN_GOOD) {
       recommendation = 'Good opportunity. You\'ll break even in ' + Math.round(breakEvenMonths / 12) + ' years. Worth refinancing if you plan to stay longer.';
-    } else if (breakEvenMonths < 120) {
+    } else if (breakEvenMonths < BREAK_EVEN_MARGINAL) {
       recommendation = 'Marginal benefit. Break-even takes ' + Math.round(breakEvenMonths / 12) + ' years. Only refinance if you\'re certain you\'ll keep the loan that long.';
     } else if (monthlySavings < 0) {
       recommendation = 'Not recommended. Your monthly payment would increase. Only consider if you need cash-out or to shorten the term.';
@@ -588,6 +635,12 @@ const MortgageCalculator = () => {
       recommendation
     };
   };
+
+  // Validate refinance inputs
+  useEffect(() => {
+    const validation = validateRefinanceInputs(refinanceInputs);
+    setRefinanceValidationErrors(validation.errors);
+  }, [refinanceInputs]);
 
   // Calculate refinance result
   const refinanceResult = useMemo(() => {
@@ -1960,6 +2013,23 @@ const MortgageCalculator = () => {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Refinance Calculator</h2>
               </div>
+
+              {/* Validation Errors */}
+              {refinanceValidationErrors.length > 0 && (
+                <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 dark:border-red-400 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">⚠️</span>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-red-800 dark:text-red-200 mb-2">Invalid Input Detected</h3>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-red-700 dark:text-red-300">
+                        {refinanceValidationErrors.map((error, idx) => (
+                          <li key={idx}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Current Loan Details */}
               <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 p-6 rounded-lg border border-orange-200 dark:border-orange-800">
