@@ -1097,45 +1097,36 @@ const MortgageCalculator = () => {
               <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
                 <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Recommendations</h2>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="flex flex-wrap gap-4">
                   {ltvRatio > 80 && (
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                      <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">⚠️ PMI Alert</h3>
-                      <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                        Your loan-to-value ratio is {ltvRatio.toFixed(1)}%. Consider a larger down payment to avoid PMI,
-                        or plan to pay extra principal to reach 78% LTV faster.
+                    <div className="flex-1 min-w-64 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2 text-sm">⚠️ PMI Alert</h3>
+                      <p className="text-xs text-yellow-700 dark:text-yellow-300 line-clamp-3">
+                        Your LTV is {ltvRatio.toFixed(1)}%. Increase down payment to 20% or pay extra principal to reach 78% LTV.
                       </p>
                     </div>
                   )}
 
                   {!inputs.isExistingLoan && ((inputs.downPayment / inputs.homePrice) * 100) < 20 && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">💡 Down Payment Tip</h3>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Increasing your down payment to 20% ({formatCurrency(inputs.homePrice * 0.2)}) would eliminate PMI
-                        and save you {formatCurrency(monthlyPMI * 12)} per year.
+                    <div className="flex-1 min-w-64 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 text-sm">💡 Down Payment Tip</h3>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 line-clamp-3">
+                        Increase down payment to 20% ({formatCurrency(inputs.homePrice * 0.2)}) to eliminate PMI and save {formatCurrency(monthlyPMI * 12)}/year.
                       </p>
                     </div>
                   )}
 
-                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-                    <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">🚀 Payoff Strategy</h3>
-                    <p className="text-sm text-green-700 dark:text-green-300 mb-3">
-                      Adding just {formatCurrency(100)} extra per month would save you approximately{' '}
-                      {formatCurrency(
+                  <div className="flex-1 min-w-64 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                    <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2 text-sm">🚀 Payoff Strategy</h3>
+                    <p className="text-xs text-green-700 dark:text-green-300 line-clamp-3">
+                      +{formatCurrency(100)}/month saves {formatCurrency(
                         (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0) -
                         (generateAmortizationSchedule(100)[generateAmortizationSchedule(100).length - 1]?.totalInterest || 0)
-                      )} in interest over the life of the loan.
+                      )} interest. Bi-weekly: save {formatCurrency(
+                        (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0) -
+                        (generateAmortizationSchedule(0, false, 0, true)[generateAmortizationSchedule(0, false, 0, true).length - 1]?.totalInterest || 0)
+                      )}.
                     </p>
-                    <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded border border-green-300 dark:border-green-700">
-                      <p className="text-sm text-green-800 dark:text-green-200">
-                        <strong>💡 Bi-Weekly Tip:</strong> Switching to bi-weekly payments ({formatCurrency(monthlyPI / 2)} every 2 weeks)
-                        would save you {formatCurrency(
-                          (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0) -
-                          (generateAmortizationSchedule(0, false, 0, true)[generateAmortizationSchedule(0, false, 0, true).length - 1]?.totalInterest || 0)
-                        )} in interest and pay off your loan {standardSchedule.length - generateAmortizationSchedule(0, false, 0, true).length} months earlier!
-                      </p>
-                    </div>
                   </div>
                 </div>
               </div>
