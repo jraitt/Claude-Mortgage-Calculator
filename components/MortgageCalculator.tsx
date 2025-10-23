@@ -770,19 +770,12 @@ const MortgageCalculator = () => {
               isActive={activeTab === 'calculator'}
               onClick={setActiveTab}
             />
-            <TabButton 
-              id="strategies" 
-              label="Paydown Strategies" 
-              icon={TrendingDown} 
-              isActive={activeTab === 'strategies'} 
-              onClick={setActiveTab} 
-            />
-            <TabButton 
-              id="comparison" 
-              label="Schedule Comparison" 
-              icon={GitCompare} 
-              isActive={activeTab === 'comparison'} 
-              onClick={setActiveTab} 
+            <TabButton
+              id="strategies"
+              label="Existing Mortgage"
+              icon={TrendingDown}
+              isActive={activeTab === 'strategies'}
+              onClick={setActiveTab}
             />
             <TabButton
               id="points-calculator"
@@ -819,111 +812,30 @@ const MortgageCalculator = () => {
                   )}
                 </div>
 
-                {/* New/Existing Loan Toggle */}
-                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="loanType"
-                        checked={!inputs.isExistingLoan}
-                        onChange={() => setInputs((prev: MortgageInputs) => ({ ...prev, isExistingLoan: false }))}
-                        className="w-4 h-4 text-blue-600 dark:text-blue-400"
-                      />
-                      <span className="font-medium text-gray-800 dark:text-gray-200">New Loan</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="loanType"
-                        checked={inputs.isExistingLoan}
-                        onChange={() => setInputs((prev: MortgageInputs) => ({ ...prev, isExistingLoan: true }))}
-                        className="w-4 h-4 text-blue-600 dark:text-blue-400"
-                      />
-                      <span className="font-medium text-gray-800 dark:text-gray-200">Existing Loan</span>
-                    </label>
-                  </div>
-                </div>
-                
                 <div className="grid gap-4">
-                  {!inputs.isExistingLoan && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Home Price</label>
-                      <input
-                        type="number"
-                        value={inputs.homePrice || ''}
-                        onChange={(e) => updateInput('homePrice', e.target.value)}
-                        className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Existing Loan Fields */}
-                  {inputs.isExistingLoan && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Loan Start Date</label>
-                        <input
-                          type="date"
-                          value={inputs.loanStartDate}
-                          onChange={(e) => setInputs((prev: MortgageInputs) => ({ ...prev, loanStartDate: e.target.value }))}
-                          className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
-                        />
-                      </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Home Price</label>
+                    <input
+                      type="number"
+                      value={inputs.homePrice || ''}
+                      onChange={(e) => updateInput('homePrice', e.target.value)}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
+                    />
+                  </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Original Principal</label>
-                          <input
-                            type="number"
-                            value={inputs.originalPrincipal || ''}
-                            onChange={(e) => updateInput('originalPrincipal', e.target.value)}
-                            className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
-                          />
-                        </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Down Payment</label>
+                    <input
+                      type="number"
+                      value={inputs.downPayment || ''}
+                      onChange={(e) => updateInput('downPayment', e.target.value)}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
+                    />
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}% down
+                    </p>
+                  </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Balance</label>
-                          <input
-                            type="number"
-                            value={inputs.currentBalance || ''}
-                            onChange={(e) => updateInput('currentBalance', e.target.value)}
-                            className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payments Already Made</label>
-                        <input
-                          type="number"
-                          value={inputs.paymentsMade || ''}
-                          onChange={(e) => updateInput('paymentsMade', e.target.value)}
-                          className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
-                        />
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {inputs.paymentsMade} of {inputs.loanTerm * 12} payments completed
-                        </p>
-                      </div>
-                    </>
-                  )}
-                  
-                  {/* Down Payment - only show for new loans */}
-                  {!inputs.isExistingLoan && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Down Payment</label>
-                      <input
-                        type="number"
-                        value={inputs.downPayment || ''}
-                        onChange={(e) => updateInput('downPayment', e.target.value)}
-                        className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
-                      />
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}% down
-                      </p>
-                    </div>
-                  )}
-                  
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Interest Rate (%)</label>
@@ -1207,11 +1119,61 @@ const MortgageCalculator = () => {
             </div>
           )}
 
-          {/* Paydown Strategies Tab */}
+          {/* Existing Mortgage Tab */}
           {activeTab === 'strategies' && (
             <div className="grid lg:grid-cols-2 gap-8">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Paydown Options</h2>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Existing Loan Details</h2>
+
+                <div className="space-y-6">
+                  {/* Existing Loan Inputs */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Loan Start Date</label>
+                    <input
+                      type="date"
+                      value={inputs.loanStartDate}
+                      onChange={(e) => setInputs((prev: MortgageInputs) => ({ ...prev, loanStartDate: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Original Principal</label>
+                      <input
+                        type="number"
+                        value={inputs.originalPrincipal || ''}
+                        onChange={(e) => updateInput('originalPrincipal', e.target.value)}
+                        className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Balance</label>
+                      <input
+                        type="number"
+                        value={inputs.currentBalance || ''}
+                        onChange={(e) => updateInput('currentBalance', e.target.value)}
+                        className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payments Already Made</label>
+                    <input
+                      type="number"
+                      value={inputs.paymentsMade || ''}
+                      onChange={(e) => updateInput('paymentsMade', e.target.value)}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
+                    />
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {inputs.paymentsMade} of {inputs.loanTerm * 12} payments completed
+                    </p>
+                  </div>
+                </div>
+
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 mt-8">Paydown Options</h2>
 
                 <div className="space-y-6">
                   <div>
@@ -1391,13 +1353,10 @@ const MortgageCalculator = () => {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Schedule Comparison Tab */}
-          {activeTab === 'comparison' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Schedule Comparison</h2>
+              {/* Schedule Comparison Section - Part of Existing Mortgage Tab */}
+              <div className="space-y-6 mt-12">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Schedule Comparison</h2>
 
               {/* Summary Comparison */}
               <div className="grid md:grid-cols-3 gap-4 mb-8">
@@ -1615,6 +1574,7 @@ const MortgageCalculator = () => {
                   </p>
                 </div>
               )}
+            </div>
             </div>
           )}
 
