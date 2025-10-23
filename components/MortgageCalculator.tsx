@@ -999,46 +999,8 @@ const MortgageCalculator = () => {
                 </div>
               </div>
 
-              {/* Recommendations Section - Horizontal Layout */}
-              <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Recommendations</h2>
-
-                <div className="flex flex-wrap gap-4">
-                  {ltvRatio > 80 && (
-                    <div className="flex-1 min-w-64 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                      <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2 text-sm">⚠️ PMI Alert</h3>
-                      <p className="text-xs text-yellow-700 dark:text-yellow-300 line-clamp-3">
-                        Your LTV is {ltvRatio.toFixed(1)}%. Increase down payment to 20% or pay extra principal to reach 78% LTV.
-                      </p>
-                    </div>
-                  )}
-
-                  {!inputs.isExistingLoan && ((inputs.downPayment / inputs.homePrice) * 100) < 20 && (
-                    <div className="flex-1 min-w-64 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 text-sm">💡 Down Payment Tip</h3>
-                      <p className="text-xs text-blue-700 dark:text-blue-300 line-clamp-3">
-                        Increase down payment to 20% ({formatCurrency(inputs.homePrice * 0.2)}) to eliminate PMI and save {formatCurrency(monthlyPMI * 12)}/year.
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="flex-1 min-w-64 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                    <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2 text-sm">🚀 Payoff Strategy</h3>
-                    <p className="text-xs text-green-700 dark:text-green-300 line-clamp-3">
-                      +{formatCurrency(100)}/month saves {formatCurrency(
-                        (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0) -
-                        (generateAmortizationSchedule(100)[generateAmortizationSchedule(100).length - 1]?.totalInterest || 0)
-                      )} interest. Bi-weekly: save {formatCurrency(
-                        (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0) -
-                        (generateAmortizationSchedule(0, false, 0, true)[generateAmortizationSchedule(0, false, 0, true).length - 1]?.totalInterest || 0)
-                      )}.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Amortization Schedule Section */}
-              <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
+              {/* Amortization Schedule Section - Full Width */}
+              <div className="w-full mt-12 pt-8 border-t border-gray-200 dark:border-gray-700 px-6">
                 <button
                   onClick={() => setShowAmortization(!showAmortization)}
                   className="flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
