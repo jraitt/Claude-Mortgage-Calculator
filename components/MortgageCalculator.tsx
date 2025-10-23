@@ -1070,130 +1070,71 @@ const MortgageCalculator = () => {
                         })}
                       </span>
                     </div>
+                    <div className="border-t border-gray-300 dark:border-gray-600 pt-2 mt-2">
+                      <div className="font-semibold text-gray-800 dark:text-gray-100 mb-2 text-sm">Key Ratios</div>
+                      <div className="flex justify-between">
+                        <span>Loan-to-Value (LTV):</span>
+                        <span className="font-medium">{ltvRatio.toFixed(1)}%</span>
+                      </div>
+                      {!inputs.isExistingLoan && (
+                        <div className="flex justify-between">
+                          <span>Down Payment %:</span>
+                          <span className="font-medium">{((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}%</span>
+                        </div>
+                      )}
+                      {!inputs.isExistingLoan && (
+                        <div className="flex justify-between">
+                          <span>Monthly Payment/Home Price:</span>
+                          <span className="font-medium">{((totalMonthlyPayment / inputs.homePrice) * 100).toFixed(2)}%</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Analysis Section - Moved from separate Analysis tab */}
+              {/* Recommendations Section - Horizontal Layout */}
               <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
-                <div className="grid lg:grid-cols-2 gap-8">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Loan Analysis</h2>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Recommendations</h2>
 
-                    <div className="space-y-4">
-                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">Payment Breakdown</h3>
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">Principal & Interest</span>
-                            <div className="flex items-center gap-2">
-                              <div className="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                                <div
-                                  className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full"
-                                  style={{ width: `${(monthlyPI / totalMonthlyPayment) * 100}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrency(monthlyPI)}</span>
-                            </div>
-                          </div>
-
-                          {monthlyPMI > 0 && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">PMI</span>
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                                  <div
-                                    className="bg-yellow-500 dark:bg-yellow-400 h-2 rounded-full"
-                                    style={{ width: `${(monthlyPMI / totalMonthlyPayment) * 100}%` }}
-                                  ></div>
-                                </div>
-                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrency(monthlyPMI)}</span>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">Taxes & Insurance</span>
-                            <div className="flex items-center gap-2">
-                              <div className="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                                <div
-                                  className="bg-purple-500 dark:bg-purple-400 h-2 rounded-full"
-                                  style={{ width: `${(monthlyEscrow / totalMonthlyPayment) * 100}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrency(monthlyEscrow)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">Key Ratios</h3>
-                        <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                          <div className="flex justify-between">
-                            <span>Loan-to-Value (LTV):</span>
-                            <span className="font-medium">{ltvRatio.toFixed(1)}%</span>
-                          </div>
-                          {!inputs.isExistingLoan && (
-                            <div className="flex justify-between">
-                              <span>Down Payment %:</span>
-                              <span className="font-medium">{((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}%</span>
-                            </div>
-                          )}
-                          {!inputs.isExistingLoan && (
-                            <div className="flex justify-between">
-                              <span>Monthly Payment/Home Price:</span>
-                              <span className="font-medium">{((totalMonthlyPayment / inputs.homePrice) * 100).toFixed(2)}%</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {ltvRatio > 80 && (
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">⚠️ PMI Alert</h3>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                        Your loan-to-value ratio is {ltvRatio.toFixed(1)}%. Consider a larger down payment to avoid PMI,
+                        or plan to pay extra principal to reach 78% LTV faster.
+                      </p>
                     </div>
-                  </div>
+                  )}
 
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Recommendations</h2>
+                  {!inputs.isExistingLoan && ((inputs.downPayment / inputs.homePrice) * 100) < 20 && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">💡 Down Payment Tip</h3>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Increasing your down payment to 20% ({formatCurrency(inputs.homePrice * 0.2)}) would eliminate PMI
+                        and save you {formatCurrency(monthlyPMI * 12)} per year.
+                      </p>
+                    </div>
+                  )}
 
-                    <div className="space-y-4">
-                      {ltvRatio > 80 && (
-                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                          <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">⚠️ PMI Alert</h3>
-                          <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                            Your loan-to-value ratio is {ltvRatio.toFixed(1)}%. Consider a larger down payment to avoid PMI,
-                            or plan to pay extra principal to reach 78% LTV faster.
-                          </p>
-                        </div>
-                      )}
-
-                      {!inputs.isExistingLoan && ((inputs.downPayment / inputs.homePrice) * 100) < 20 && (
-                        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                          <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">💡 Down Payment Tip</h3>
-                          <p className="text-sm text-blue-700 dark:text-blue-300">
-                            Increasing your down payment to 20% ({formatCurrency(inputs.homePrice * 0.2)}) would eliminate PMI
-                            and save you {formatCurrency(monthlyPMI * 12)} per year.
-                          </p>
-                        </div>
-                      )}
-
-                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-                        <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">🚀 Payoff Strategy</h3>
-                        <p className="text-sm text-green-700 dark:text-green-300 mb-3">
-                          Adding just {formatCurrency(100)} extra per month would save you approximately{' '}
-                          {formatCurrency(
-                            (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0) -
-                            (generateAmortizationSchedule(100)[generateAmortizationSchedule(100).length - 1]?.totalInterest || 0)
-                          )} in interest over the life of the loan.
-                        </p>
-                        <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded border border-green-300 dark:border-green-700">
-                          <p className="text-sm text-green-800 dark:text-green-200">
-                            <strong>💡 Bi-Weekly Tip:</strong> Switching to bi-weekly payments ({formatCurrency(monthlyPI / 2)} every 2 weeks)
-                            would save you {formatCurrency(
-                              (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0) -
-                              (generateAmortizationSchedule(0, false, 0, true)[generateAmortizationSchedule(0, false, 0, true).length - 1]?.totalInterest || 0)
-                            )} in interest and pay off your loan {standardSchedule.length - generateAmortizationSchedule(0, false, 0, true).length} months earlier!
-                          </p>
-                        </div>
-                      </div>
+                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                    <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">🚀 Payoff Strategy</h3>
+                    <p className="text-sm text-green-700 dark:text-green-300 mb-3">
+                      Adding just {formatCurrency(100)} extra per month would save you approximately{' '}
+                      {formatCurrency(
+                        (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0) -
+                        (generateAmortizationSchedule(100)[generateAmortizationSchedule(100).length - 1]?.totalInterest || 0)
+                      )} in interest over the life of the loan.
+                    </p>
+                    <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded border border-green-300 dark:border-green-700">
+                      <p className="text-sm text-green-800 dark:text-green-200">
+                        <strong>💡 Bi-Weekly Tip:</strong> Switching to bi-weekly payments ({formatCurrency(monthlyPI / 2)} every 2 weeks)
+                        would save you {formatCurrency(
+                          (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0) -
+                          (generateAmortizationSchedule(0, false, 0, true)[generateAmortizationSchedule(0, false, 0, true).length - 1]?.totalInterest || 0)
+                        )} in interest and pay off your loan {standardSchedule.length - generateAmortizationSchedule(0, false, 0, true).length} months earlier!
+                      </p>
                     </div>
                   </div>
                 </div>
