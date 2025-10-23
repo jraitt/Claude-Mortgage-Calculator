@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Calculator, Home, TrendingDown, DollarSign, Calendar, GitCompare, Download, Sun, Moon, Scale, RefreshCw } from 'lucide-react';
+import { Calculator, Home, TrendingDown, DollarSign, GitCompare, Download, Sun, Moon, Scale, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { generateMortgageCSV, downloadCSV, generateFilename } from '../utils/csvExport';
 import { useTheme } from '../contexts/ThemeContext';
 import {
@@ -141,6 +141,7 @@ const MortgageCalculator = () => {
   const [inputs, setInputs] = useState<MortgageInputs>(loadSavedInputs);
   const [activeTab, setActiveTab] = useState('calculator');
   const [scrollLocked, setScrollLocked] = useState(true);
+  const [showAmortization, setShowAmortization] = useState(false);
 
   // Load saved scenarios from localStorage or use defaults
   const loadSavedScenarios = (): PointsScenario[] => {
@@ -770,13 +771,6 @@ const MortgageCalculator = () => {
               onClick={setActiveTab}
             />
             <TabButton 
-              id="schedule" 
-              label="Amortization" 
-              icon={Calendar} 
-              isActive={activeTab === 'schedule'} 
-              onClick={setActiveTab} 
-            />
-            <TabButton 
               id="strategies" 
               label="Paydown Strategies" 
               icon={TrendingDown} 
@@ -1130,74 +1124,85 @@ const MortgageCalculator = () => {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Amortization Schedule Tab */}
-          {activeTab === 'schedule' && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Amortization Schedule</h2>
-                <div className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded border border-gray-200 dark:border-gray-600">
-                  Total Payments: {standardSchedule.length} | Total Interest: {formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0)}
-                </div>
-              </div>
+              {/* Amortization Schedule Section */}
+              <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setShowAmortization(!showAmortization)}
+                  className="flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  Amortization Schedule
+                  {showAmortization ? (
+                    <ChevronUp size={24} />
+                  ) : (
+                    <ChevronDown size={24} />
+                  )}
+                </button>
 
-              <div className="overflow-x-auto max-h-96 border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="w-full border-collapse bg-white dark:bg-gray-800">
-                  <thead className="sticky top-0 bg-gray-50 dark:bg-gray-700 z-10">
-                    <tr>
-                      <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Payment #</th>
-                      <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Date</th>
-                      <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Payment</th>
-                      <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Principal</th>
-                      <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Interest</th>
-                      <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Balance</th>
-                      <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Total Interest</th>
-                      {monthlyPMI > 0 && <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">PMI</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {standardSchedule.map((payment, index) => {
-                      const paymentDate = new Date();
-                      paymentDate.setMonth(paymentDate.getMonth() + payment.month);
+                {showAmortization && (
+                  <div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded border border-gray-200 dark:border-gray-600 mb-4">
+                      Total Payments: {standardSchedule.length} | Total Interest: {formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0)}
+                    </div>
 
-                      return (
-                        <tr key={index} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${payment.month % 12 === 0 ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
-                          <td className="border-b border-gray-100 dark:border-gray-700 p-3 font-medium text-gray-900 dark:text-gray-100">{payment.month}</td>
-                          <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-sm text-gray-700 dark:text-gray-300">
-                            {paymentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                          </td>
-                          <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-gray-900 dark:text-gray-100">{formatCurrency(payment.payment)}</td>
-                          <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-green-700 dark:text-green-400 font-medium">{formatCurrency(payment.principal)}</td>
-                          <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-red-600 dark:text-red-400">{formatCurrency(payment.interest)}</td>
-                          <td className="border-b border-gray-100 dark:border-gray-700 p-3 font-medium text-gray-900 dark:text-gray-100">{formatCurrency(payment.balance)}</td>
-                          <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-red-700 dark:text-red-400">{formatCurrency(payment.totalInterest)}</td>
-                          {monthlyPMI > 0 && (
-                            <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-yellow-600 dark:text-yellow-400">
-                              {payment.pmi > 0 ? formatCurrency(payment.pmi) : '—'}
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                    <div className="overflow-x-auto max-h-96 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <table className="w-full border-collapse bg-white dark:bg-gray-800">
+                        <thead className="sticky top-0 bg-gray-50 dark:bg-gray-700 z-10">
+                          <tr>
+                            <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Payment #</th>
+                            <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Date</th>
+                            <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Payment</th>
+                            <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Principal</th>
+                            <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Interest</th>
+                            <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Balance</th>
+                            <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">Total Interest</th>
+                            {monthlyPMI > 0 && <th className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-100">PMI</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {standardSchedule.map((payment, index) => {
+                            const paymentDate = new Date();
+                            paymentDate.setMonth(paymentDate.getMonth() + payment.month);
 
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800">
-                  <div className="text-green-600 dark:text-green-300 font-medium">Total Principal</div>
-                  <div className="text-green-800 dark:text-green-200 font-bold">{formatCurrency(loanAmount)}</div>
-                </div>
-                <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
-                  <div className="text-red-600 dark:text-red-300 font-medium">Total Interest</div>
-                  <div className="text-red-800 dark:text-red-200 font-bold">{formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0)}</div>
-                </div>
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800">
-                  <div className="text-blue-600 dark:text-blue-300 font-medium">Total Payments</div>
-                  <div className="text-blue-800 dark:text-blue-200 font-bold">{formatCurrency(loanAmount + (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0))}</div>
-                </div>
+                            return (
+                              <tr key={index} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${payment.month % 12 === 0 ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                                <td className="border-b border-gray-100 dark:border-gray-700 p-3 font-medium text-gray-900 dark:text-gray-100">{payment.month}</td>
+                                <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-sm text-gray-700 dark:text-gray-300">
+                                  {paymentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                </td>
+                                <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-gray-900 dark:text-gray-100">{formatCurrency(payment.payment)}</td>
+                                <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-green-700 dark:text-green-400 font-medium">{formatCurrency(payment.principal)}</td>
+                                <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-red-600 dark:text-red-400">{formatCurrency(payment.interest)}</td>
+                                <td className="border-b border-gray-100 dark:border-gray-700 p-3 font-medium text-gray-900 dark:text-gray-100">{formatCurrency(payment.balance)}</td>
+                                <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-red-700 dark:text-red-400">{formatCurrency(payment.totalInterest)}</td>
+                                {monthlyPMI > 0 && (
+                                  <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-yellow-600 dark:text-yellow-400">
+                                    {payment.pmi > 0 ? formatCurrency(payment.pmi) : '—'}
+                                  </td>
+                                )}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800">
+                        <div className="text-green-600 dark:text-green-300 font-medium">Total Principal</div>
+                        <div className="text-green-800 dark:text-green-200 font-bold">{formatCurrency(loanAmount)}</div>
+                      </div>
+                      <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
+                        <div className="text-red-600 dark:text-red-300 font-medium">Total Interest</div>
+                        <div className="text-red-800 dark:text-red-200 font-bold">{formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0)}</div>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                        <div className="text-blue-600 dark:text-blue-300 font-medium">Total Payments</div>
+                        <div className="text-blue-800 dark:text-blue-200 font-bold">{formatCurrency(loanAmount + (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0))}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
