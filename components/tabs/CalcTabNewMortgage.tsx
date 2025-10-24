@@ -225,7 +225,7 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
       </div>
 
       {/* Amortization Schedule Section - Full Width */}
-      <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
+      <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700 -mx-6 px-6">
         <button
           onClick={() => setShowAmortization(!showAmortization)}
           className="flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -241,7 +241,7 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
               {formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0)}
             </div>
 
-            <div className="overflow-x-auto max-h-96 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
               <table className="w-full border-collapse bg-white dark:bg-gray-800">
                 <thead className="sticky top-0 bg-gray-50 dark:bg-gray-700 z-10">
                   <tr>
