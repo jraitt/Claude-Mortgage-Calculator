@@ -83,8 +83,10 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
             />
           </div>
         </div>
+      </div>
 
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 mt-8">Paydown Options</h2>
+      <div>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Paydown Options</h2>
 
         <div className="space-y-6">
           <div>
@@ -193,80 +195,6 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
               />
             </>
           )}
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Savings Comparison</h2>
-
-        <div className="space-y-4">
-          <SummaryCard
-            color="red"
-            title="Standard Loan"
-            metrics={[
-              { label: 'Payoff Time', value: `${standardSchedule.length} months` },
-              {
-                label: 'Total Interest',
-                value: formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0),
-              },
-            ]}
-          />
-
-          <SummaryCard
-            color="green"
-            title={
-              inputs.biWeeklyPayments
-                ? 'With Bi-Weekly Payments'
-                : inputs.doubleMonthlyPrincipal
-                ? 'With Double Monthly Principal'
-                : 'With Extra Payments'
-            }
-            metrics={[
-              { label: 'Payoff Time', value: `${paydownSchedule.length} months` },
-              {
-                label: 'Total Interest',
-                value: formatCurrency(paydownSchedule[paydownSchedule.length - 1]?.totalInterest || 0),
-              },
-              ...(inputs.biWeeklyPayments
-                ? [{ label: 'Payment Amount', value: `${formatCurrency(monthlyPI / 2)} bi-weekly` }]
-                : []),
-              ...(inputs.doubleMonthlyPrincipal
-                ? [
-                    {
-                      label: 'Monthly Payment',
-                      value: formatCurrency(monthlyPI + (monthlyPI - loanAmount * monthlyRate)),
-                    },
-                  ]
-                : []),
-            ]}
-          />
-
-          <SummaryCard
-            color="blue"
-            title="Savings Summary"
-            metrics={[
-              { label: 'Time Saved', value: `${standardSchedule.length - paydownSchedule.length} months`, highlight: true },
-              {
-                label: 'Interest Saved',
-                value: formatCurrency(
-                  (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0) -
-                    (paydownSchedule[paydownSchedule.length - 1]?.totalInterest || 0)
-                ),
-                highlight: true,
-              },
-              {
-                label: 'New Payoff Date',
-                value: new Date(Date.now() + paydownSchedule.length * 30.44 * 24 * 60 * 60 * 1000).toLocaleDateString(
-                  'en-US',
-                  {
-                    month: 'long',
-                    year: 'numeric',
-                  }
-                ),
-                highlight: true,
-              },
-            ]}
-          />
         </div>
       </div>
 
