@@ -123,6 +123,29 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
                   : `${ltvRatio > 78 ? 'PMI Required' : 'No PMI Required'} (LTV: ${ltvRatio.toFixed(1)}%)`}
               </p>
             </div>
+
+            {/* Key Ratios */}
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+              <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-3 text-sm">Key Ratios</h3>
+              <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                <div className="flex justify-between">
+                  <span>Loan-to-Value (LTV):</span>
+                  <span className="font-medium">{ltvRatio.toFixed(1)}%</span>
+                </div>
+                {!inputs.isExistingLoan && (
+                  <>
+                    <div className="flex justify-between">
+                      <span>Down Payment %:</span>
+                      <span className="font-medium">{((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Monthly Payment/Home Price:</span>
+                      <span className="font-medium">{((totalMonthlyPayment / inputs.homePrice) * 100).toFixed(2)}%</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -199,25 +222,6 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
                     year: 'numeric',
                   })}
                 </span>
-              </div>
-              <div className="border-t border-gray-300 dark:border-gray-600 pt-2 mt-2">
-                <div className="font-semibold text-gray-800 dark:text-gray-100 mb-2 text-sm">Key Ratios</div>
-                <div className="flex justify-between">
-                  <span>Loan-to-Value (LTV):</span>
-                  <span className="font-medium">{ltvRatio.toFixed(1)}%</span>
-                </div>
-                {!inputs.isExistingLoan && (
-                  <>
-                    <div className="flex justify-between">
-                      <span>Down Payment %:</span>
-                      <span className="font-medium">{((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Monthly Payment/Home Price:</span>
-                      <span className="font-medium">{((totalMonthlyPayment / inputs.homePrice) * 100).toFixed(2)}%</span>
-                    </div>
-                  </>
-                )}
               </div>
             </div>
           </div>
