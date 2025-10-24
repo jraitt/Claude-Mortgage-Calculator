@@ -125,100 +125,100 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Results Summary */}
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Payment Summary</h2>
+        {/* Results Summary */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Payment Summary</h2>
 
-        <div className="grid gap-4">
-          <SummaryCard
-            color="blue"
-            title={inputs.isExistingLoan ? 'Current Balance' : 'Loan Amount'}
-            metrics={[{ label: 'Amount', value: formatCurrency(loanAmount) }]}
-          />
-
-          <SummaryCard
-            color="green"
-            title="Principal & Interest"
-            metrics={[{ label: 'Monthly', value: formatCurrency(monthlyPI) }]}
-          />
-
-          {monthlyPMI > 0 && (
+          <div className="grid gap-4">
             <SummaryCard
-              color="yellow"
-              title="Monthly PMI"
-              metrics={[{ label: 'Amount', value: formatCurrency(monthlyPMI) }]}
+              color="blue"
+              title={inputs.isExistingLoan ? 'Current Balance' : 'Loan Amount'}
+              metrics={[{ label: 'Amount', value: formatCurrency(loanAmount) }]}
             />
-          )}
 
-          <SummaryCard
-            color="purple"
-            title="Taxes & Insurance"
-            metrics={[{ label: 'Monthly', value: formatCurrency(monthlyEscrow) }]}
-          />
+            <SummaryCard
+              color="green"
+              title="Principal & Interest"
+              metrics={[{ label: 'Monthly', value: formatCurrency(monthlyPI) }]}
+            />
 
-          <div className="bg-gray-900 dark:bg-gray-950 text-white p-4 rounded-lg">
-            <div className="text-sm text-gray-300 dark:text-gray-400">Total Monthly Payment</div>
-            <div className="text-3xl font-bold dark:text-gray-100">{formatCurrency(totalMonthlyPayment)}</div>
-          </div>
-        </div>
-
-        {/* Loan Summary */}
-        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-          <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">Loan Summary</h3>
-          <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-            {inputs.isExistingLoan && (
-              <>
-                <div className="flex justify-between">
-                  <span>Original Principal:</span>
-                  <span className="font-medium">{formatCurrency(inputs.originalPrincipal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Payments Made:</span>
-                  <span className="font-medium">{inputs.paymentsMade} of {inputs.loanTerm * 12}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Remaining Payments:</span>
-                  <span className="font-medium">{totalPayments}</span>
-                </div>
-              </>
+            {monthlyPMI > 0 && (
+              <SummaryCard
+                color="yellow"
+                title="Monthly PMI"
+                metrics={[{ label: 'Amount', value: formatCurrency(monthlyPMI) }]}
+              />
             )}
-            <div className="flex justify-between">
-              <span>{inputs.isExistingLoan ? 'Remaining Interest:' : 'Total Interest Paid:'}</span>
-              <span className="font-medium">{formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0)}</span>
+
+            <SummaryCard
+              color="purple"
+              title="Taxes & Insurance"
+              metrics={[{ label: 'Monthly', value: formatCurrency(monthlyEscrow) }]}
+            />
+
+            <div className="bg-gray-900 dark:bg-gray-950 text-white p-4 rounded-lg">
+              <div className="text-sm text-gray-300 dark:text-gray-400">Total Monthly Payment</div>
+              <div className="text-3xl font-bold dark:text-gray-100">{formatCurrency(totalMonthlyPayment)}</div>
             </div>
-            <div className="flex justify-between">
-              <span>{inputs.isExistingLoan ? 'Total Remaining Cost:' : 'Total Loan Cost:'}</span>
-              <span className="font-medium">{formatCurrency(loanAmount + (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0))}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Payoff Date:</span>
-              <span className="font-medium">
-                {new Date(Date.now() + standardSchedule.length * 30.44 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
-                  month: 'long',
-                  year: 'numeric',
-                })}
-              </span>
-            </div>
-            <div className="border-t border-gray-300 dark:border-gray-600 pt-2 mt-2">
-              <div className="font-semibold text-gray-800 dark:text-gray-100 mb-2 text-sm">Key Ratios</div>
-              <div className="flex justify-between">
-                <span>Loan-to-Value (LTV):</span>
-                <span className="font-medium">{ltvRatio.toFixed(1)}%</span>
-              </div>
-              {!inputs.isExistingLoan && (
+          </div>
+
+          {/* Loan Summary */}
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+            <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">Loan Summary</h3>
+            <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+              {inputs.isExistingLoan && (
                 <>
                   <div className="flex justify-between">
-                    <span>Down Payment %:</span>
-                    <span className="font-medium">{((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}%</span>
+                    <span>Original Principal:</span>
+                    <span className="font-medium">{formatCurrency(inputs.originalPrincipal)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Monthly Payment/Home Price:</span>
-                    <span className="font-medium">{((totalMonthlyPayment / inputs.homePrice) * 100).toFixed(2)}%</span>
+                    <span>Payments Made:</span>
+                    <span className="font-medium">{inputs.paymentsMade} of {inputs.loanTerm * 12}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Remaining Payments:</span>
+                    <span className="font-medium">{totalPayments}</span>
                   </div>
                 </>
               )}
+              <div className="flex justify-between">
+                <span>{inputs.isExistingLoan ? 'Remaining Interest:' : 'Total Interest Paid:'}</span>
+                <span className="font-medium">{formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{inputs.isExistingLoan ? 'Total Remaining Cost:' : 'Total Loan Cost:'}</span>
+                <span className="font-medium">{formatCurrency(loanAmount + (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0))}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Payoff Date:</span>
+                <span className="font-medium">
+                  {new Date(Date.now() + standardSchedule.length * 30.44 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+              <div className="border-t border-gray-300 dark:border-gray-600 pt-2 mt-2">
+                <div className="font-semibold text-gray-800 dark:text-gray-100 mb-2 text-sm">Key Ratios</div>
+                <div className="flex justify-between">
+                  <span>Loan-to-Value (LTV):</span>
+                  <span className="font-medium">{ltvRatio.toFixed(1)}%</span>
+                </div>
+                {!inputs.isExistingLoan && (
+                  <>
+                    <div className="flex justify-between">
+                      <span>Down Payment %:</span>
+                      <span className="font-medium">{((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Monthly Payment/Home Price:</span>
+                      <span className="font-medium">{((totalMonthlyPayment / inputs.homePrice) * 100).toFixed(2)}%</span>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
