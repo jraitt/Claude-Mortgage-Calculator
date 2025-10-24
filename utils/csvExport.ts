@@ -337,11 +337,190 @@ export const downloadCSV = (csvContent: string, filename: string): void => {
   }
 };
 
-export const generateFilename = (hasPaydownStrategy: boolean): string => {
+export const generateFilename = (tabType: string): string => {
   const now = new Date();
   const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
   const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
   
-  const prefix = hasPaydownStrategy ? 'mortgage-comparison' : 'mortgage-calculator';
+  const prefixMap: { [key: string]: string } = {
+    'calculator': 'new-mortgage',
+    'strategies': 'existing-mortgage',
+    'points-calculator': 'points-analysis',
+    'refinance-calculator': 'refinance-analysis'
+  };
+  
+  const prefix = prefixMap[tabType] || 'mortgage-data';
   return `${prefix}-${dateStr}-${timeStr}.csv`;
+};
+
+// Points Calculator CSV Export
+export const generatePointsCSV = (
+  scenarios: any[],
+  comparisonResults: any[],
+  loanAmount: number,
+  loanTerm: number
+): string => {
+  const data: (string | number)[][] = [
+    ['Mortgage Points Analysis Export'],
+    [`Generated on: ${new Date().toLocaleString()}`],
+    [''],
+    ['LOAN DETAILS'],
+    ['Loan Amount', formatCurrency(loanAmount)],
+    ['Loan Term', `${loanTerm} years`],
+    [''],
+    ['SCENARIOS COMPARISON']
+  ];
+
+  // Headers for scenarios
+  const headers = [
+    'Scenario Name',
+    'Interest Rate',
+    'Points',
+    'Point Cost',
+    'Monthly P&I',
+    'Break-even (Months)',
+    'Monthly Savings',
+    'Total Cost (5 Years)',
+    'Total Cost (10 Years)',
+    'Total Cost (Full Term)'
+  ];
+  data.push(headers);
+
+  // Add each scenario's data
+  comparisonResults.forEach(result => {
+    const row = [
+      result.scenario.name,
+      formatPercentage(result.scenario.rate),
+      result.scenario.points.toFixed(2),
+      formatCurrency(result.pointCost),
+      formatCurrency(result.monthlyPI),
+      result.breakEvenMonths ? `${result.breakEvenMonths} months` : 'N/A',
+      formatCurrency(result.monthlySavings),
+      formatCurrency(result.totalCostAt5Years),
+      formatCurrency(result.totalCostAt10Years),
+      formatCurrency(result.totalCostAtFullTerm)
+    ];
+    data.push(row);
+  });
+
+  return arrayToCSV(data);
+};
+
+// Refinance Calculator CSV Export
+export const generateRefinanceCSV = (
+  refinanceInputs: any,
+  refinanceResult: any
+): string => {
+  const data: (string | number)[][] = [
+    ['Refinance Analysis Export'],
+    [`Generated on: ${new Date().toLocaleString()}`],
+    [''],
+    ['CURRENT LOAN DETAILS'],
+    ['Current Balance', formatCurrency(refinanceInputs.currentBalance)],
+    ['Current Rate', formatPercentage(refinanceInputs.currentRate)],
+    ['Current Monthly Payment', formatCurrency(refinanceInputs.currentMonthlyPayment)],
+    ['Remaining Months', `${refinanceInputs.remainingMonths} months`],
+    [''],
+    ['NEW LOAN DETAILS'],
+    ['New Rate', formatPercentage(refinanceInputs.newRate)],
+    ['New Term', `${refinanceInputs.newTerm} years`],
+    ['Closing Costs', formatCurrency(refinanceInputs.closingCosts)],
+    ['Cash Out', formatCurrency(refinanceInputs.cashOut)],
+    ['Points', refinanceInputs.newPoints.toFixed(2)],
+    [''],
+    ['REFINANCE ANALYSIS'],
+    ['New Monthly Payment', formatCurrency(refinanceResult.newMonthlyPayment)],
+    ['Monthly Savings', formatCurrency(refinanceResult.monthlySavings)],
+    ['Break-even Point', `${refinanceResult.breakEvenMonths} months`],
+    ['Interest Savings', formatCurrency(refinanceResult.interestSavings)],
+    ['Net Savings', formatCurrency(refinanceResult.netSavings)],
+    [''],
+    ['COST COMPARISON'],
+    ['Cost at 5 Years', formatCurrency(refinanceResult.costAt5Years)],
+    ['Cost at 10 Years', formatCurrency(refinanceResult.costAt10Years)],
+    ['Cost at Full Term', formatCurrency(refinanceResult.costAtFullTerm)],
+    [''],
+    ['RECOMMENDATION'],
+    [refinanceResult.recommendation]
+  ];
+
+  return arrayToCSV(data);
+};
+
+// New Mortgage CSV Export (simplified version of existing function)
+export const generateNewMortgageCSV = (
+  inputs: any,
+  loanAmount: number,
+  monthlyPI: number,
+  monthlyPMI: number,
+  monthlyEscrow: number,
+  totalMonthlyPayment: number,
+  standardSchedule: AmortizationPayment[]
+): string => {
+  const data: (string | number)[][] = [
+    ['New Mortgage Analysis Export'],
+    [`Generated on: ${new Date().toLocaleString()}`],
+    [''],
+    ['LOAN DETAILS'],
+    ['Home Price', formatCurrency(inputs.homePrice)],
+    ['Down Payment', formatCurrency(inputs.downPayment)],
+    ['Loan Amount', formatCurrency(loanAmount)],
+    ['Interest Rate', formatPercentage(inputs.interestRate)],
+    ['Loan Term', `${inputs.loanTerm} years`],
+    ['Monthly P&I', formatCurrency(monthlyPI)],
+    ['Property Tax (Annual)', formatCurrency(inputs.propertyTax)],
+    ['Home Insurance (Annual)', formatCurrency(inputs.homeInsurance)]
+  ];
+
+  if (monthlyPMI > 0) {
+    data.push(['PMI (Monthly)', formatCurrency(monthlyPMI)]);
+  }
+
+  data.push(
+    ['Total Monthly Payment', formatCurrency(totalMonthlyPayment)],
+    [''],
+    ['LOAN SUMMARY'],
+    ['Total Payments', `${standardSchedule.length} months`],
+    ['Total Interest', formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0)],
+    ['Total Cost', formatCurrency(loanAmount + (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0))],
+    ['Payoff Date', formatDate(standardSchedule.length)]
+  );
+
+  // Add amortization schedule
+  data.push([''], ['AMORTIZATION SCHEDULE']);
+  const scheduleHeaders = [
+    'Payment #',
+    'Date',
+    'Payment Amount',
+    'Principal',
+    'Interest',
+    'Remaining Balance',
+    'Total Interest Paid'
+  ];
+
+  if (monthlyPMI > 0) {
+    scheduleHeaders.push('PMI');
+  }
+
+  data.push(scheduleHeaders);
+
+  standardSchedule.forEach(payment => {
+    const row = [
+      payment.month,
+      formatDate(payment.month),
+      formatCurrency(payment.payment),
+      formatCurrency(payment.principal),
+      formatCurrency(payment.interest),
+      formatCurrency(payment.balance),
+      formatCurrency(payment.totalInterest)
+    ];
+
+    if (monthlyPMI > 0) {
+      row.push(payment.pmi > 0 ? formatCurrency(payment.pmi) : '—');
+    }
+
+    data.push(row);
+  });
+
+  return arrayToCSV(data);
 };

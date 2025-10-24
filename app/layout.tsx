@@ -5,8 +5,8 @@ import { ThemeProvider } from '../contexts/ThemeContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Mortgage Calculator',
-  description: 'Complete loan analysis with paydown strategies',
+  title: 'Mortgage Tools Pro',
+  description: 'Industry leading tools to help you with all your mortgage needs',
 }
 
 export default function RootLayout({

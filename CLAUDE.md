@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Next.js-based mortgage calculator application that provides comprehensive loan analysis and paydown strategies. The application is built with React, TypeScript, and Tailwind CSS, featuring a single-page application with tabbed interface for different calculation views.
+This is a Next.js-based **Mortgage Tools Pro** application that provides comprehensive loan analysis and paydown strategies.
+
+## Project Overview
+
+The application is built with React, TypeScript, and Tailwind CSS, featuring a single-page application with tabbed interface for different calculation views.
 
 **CRITICAL: This is a Docker-first project. All development, testing, and building should be done using Docker and Docker Compose.**
 

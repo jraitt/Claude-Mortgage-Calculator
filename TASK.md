@@ -378,6 +378,29 @@ utils/
 
 ## ✅ Completed Tasks
 
+### TASK-110: Update Branding and CSV Export Functionality ✅
+**Completed**: 2025-10-24
+**Description**: Updated application branding from "Mortgage Calculator" to "Mortgage Tools Pro" with new tagline. Enhanced CSV export functionality to be tab-specific instead of always downloading existing mortgage data.
+
+**Changes Made**:
+- ✅ Updated title from "Mortgage Calculator" to "Mortgage Tools Pro"
+- ✅ Updated tagline to "Industry leading tools to help you with all your mortgage needs"
+- ✅ Changed "Download Report" button to "Download .csv"
+- ✅ Implemented tab-specific CSV exports:
+  - New Mortgage tab: Loan details and amortization schedule
+  - Existing Mortgage tab: Paydown strategy comparison (original functionality)
+  - Points Calculator tab: Scenario comparison and break-even analysis
+  - Refinance Calculator tab: Current vs. new loan analysis
+- ✅ Updated documentation (README.md, PLANNING.md, CLAUDE.md)
+- ✅ Enhanced CSV export utility with new functions for each tab type
+- ✅ Updated filename generation to reflect tab type
+
+**Files Modified**:
+- `app/layout.tsx` - Updated metadata title and description
+- `components/MortgageCalculator.tsx` - Updated header, button text, and CSV export logic
+- `utils/csvExport.ts` - Added tab-specific CSV generation functions
+- `README.md`, `PLANNING.md`, `CLAUDE.md` - Updated documentation
+
 ### TASK-001: Refactor MortgageCalculator.tsx ✅
 **Completed**: 2025-10-24
 **Description**: Comprehensive refactoring from 2,273-line monolith to modular architecture with 413-line orchestrator, 4 tab components, 3 shared components, and 2 custom hooks. Build verified, Docker tested, fully functional.

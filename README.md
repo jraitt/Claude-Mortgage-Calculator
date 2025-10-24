@@ -1,6 +1,6 @@
-# Claude Mortgage Calculator
+# Mortgage Tools Pro
 
-A comprehensive, feature-rich mortgage calculator built with Next.js, React, and TypeScript. Calculate monthly payments, compare paydown strategies, analyze mortgage points, and export detailed amortization schedules.
+Industry leading tools to help you with all your mortgage needs. A comprehensive, feature-rich mortgage calculator built with Next.js, React, and TypeScript. Calculate monthly payments, compare paydown strategies, analyze mortgage points, and export detailed amortization schedules.
 
 **Live Demo**: [https://mortgagecalc.compound-interests.com](https://mortgagecalc.compound-interests.com)
 
@@ -45,7 +45,7 @@ Decide if refinancing your current mortgage is worth it:
 - Total interest paid over loan lifetime
 - Total cost of loan
 - Schedule comparison views
-- Export data to CSV for further analysis
+- Export tab-specific data to CSV for further analysis
 
 ### 🎨 Modern User Experience
 - Clean, intuitive interface
@@ -158,10 +158,17 @@ If you prefer to run without Docker:
 
 ### Exporting Data
 
-1. Navigate to the **Amortization** tab
-2. Click the **Export to CSV** button
-3. Open the CSV file in Excel, Google Sheets, or any spreadsheet software
-4. Analyze your schedule, create charts, or share with advisors
+1. Navigate to any tab (New Mortgage, Existing Mortgage, Points Calculator, or Refinance Calculator)
+2. Click the **Download .csv** button in the header
+3. The CSV will contain data specific to the current active tab
+4. Open the CSV file in Excel, Google Sheets, or any spreadsheet software
+5. Analyze your data, create charts, or share with advisors
+
+**Tab-Specific Exports**:
+- **New Mortgage**: Loan details and full amortization schedule
+- **Existing Mortgage**: Paydown strategy comparison and schedules
+- **Points Calculator**: Scenario comparison and break-even analysis
+- **Refinance Calculator**: Current vs. new loan analysis and recommendations
 
 ---
 

@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Calculator, Home, TrendingDown, Scale, RefreshCw, Download, Sun, Moon } from 'lucide-react';
-import { generateMortgageCSV, downloadCSV, generateFilename } from '../utils/csvExport';
+import { generateMortgageCSV, downloadCSV, generateFilename, generateNewMortgageCSV, generatePointsCSV, generateRefinanceCSV } from '../utils/csvExport';
 import { useTheme } from '../contexts/ThemeContext';
 import { validateRefinanceInputs } from '../utils/validation';
-import { useBasicMetrics, useAmortizationSchedules } from '../utils/hooks/useCalculations';
+import { calculateRefinanceAnalysis } from '../utils/calculations/refinanceCalculations';
+import { useBasicMetrics, useAmortizationSchedules, usePointsComparison } from '../utils/hooks/useCalculations';
 import {
   CalcTabNewMortgage,
   CalcTabExistingMortgage,
@@ -235,27 +236,67 @@ const MortgageCalculator = () => {
     }
   };
 
-  // Download CSV report
+  // Download CSV report for current active tab
   const handleDownloadCSV = () => {
     try {
-      const hasPaydownStrategy =
-        inputs.biWeeklyPayments ||
-        inputs.doubleMonthlyPrincipal ||
-        inputs.extraMonthlyPrincipal > 0 ||
-        inputs.extraAnnualPayment > 0;
+      let csvContent = '';
+      
+      switch (activeTab) {
+        case 'calculator':
+          // New Mortgage tab
+          csvContent = generateNewMortgageCSV(
+            inputs,
+            loanAmount,
+            monthlyPI,
+            monthlyPMI,
+            monthlyEscrow,
+            totalMonthlyPayment,
+            standardSchedule
+          );
+          break;
+          
+        case 'strategies':
+          // Existing Mortgage tab - use original function
+          const hasPaydownStrategy =
+            inputs.biWeeklyPayments ||
+            inputs.doubleMonthlyPrincipal ||
+            inputs.extraMonthlyPrincipal > 0 ||
+            inputs.extraAnnualPayment > 0;
 
-      const csvContent = generateMortgageCSV(
-        inputs,
-        loanAmount,
-        monthlyPI,
-        monthlyPMI,
-        monthlyEscrow,
-        totalMonthlyPayment,
-        standardSchedule,
-        hasPaydownStrategy ? paydownSchedule : []
-      );
+          csvContent = generateMortgageCSV(
+            inputs,
+            loanAmount,
+            monthlyPI,
+            monthlyPMI,
+            monthlyEscrow,
+            totalMonthlyPayment,
+            standardSchedule,
+            hasPaydownStrategy ? paydownSchedule : []
+          );
+          break;
+          
+        case 'points-calculator':
+          // Points Calculator tab
+          const comparisonResults = usePointsComparison(scenarios, pointsCalcLoanAmount, pointsCalcTerm);
+          csvContent = generatePointsCSV(
+            scenarios,
+            comparisonResults,
+            pointsCalcLoanAmount,
+            pointsCalcTerm
+          );
+          break;
+          
+        case 'refinance-calculator':
+          // Refinance Calculator tab
+          const refinanceResult = calculateRefinanceAnalysis(refinanceInputs);
+          csvContent = generateRefinanceCSV(refinanceInputs, refinanceResult);
+          break;
+          
+        default:
+          throw new Error('Unknown tab type');
+      }
 
-      const filename = generateFilename(inputs.isExistingLoan);
+      const filename = generateFilename(activeTab);
       downloadCSV(csvContent, filename);
     } catch (error) {
       console.error('Failed to generate CSV:', error);
@@ -305,8 +346,8 @@ const MortgageCalculator = () => {
             <div className="flex items-center gap-3">
               <Home size={32} />
               <div>
-                <h1 className="text-3xl font-bold">Mortgage Calculator</h1>
-                <p className="text-blue-100 dark:text-blue-200 mt-1">Complete loan analysis with paydown strategies</p>
+                <h1 className="text-3xl font-bold">Mortgage Tools Pro</h1>
+                <p className="text-blue-100 dark:text-blue-200 mt-1">Industry leading tools to help you with all your mortgage needs</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -325,10 +366,10 @@ const MortgageCalculator = () => {
               <button
                 onClick={handleDownloadCSV}
                 className="bg-green-600 dark:bg-green-700 hover:bg-green-500 dark:hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                title="Download mortgage report as CSV"
+                title="Download current tab data as CSV"
               >
                 <Download size={16} />
-                Download Report
+                Download .csv
               </button>
               <button
                 onClick={resetToDefaults}

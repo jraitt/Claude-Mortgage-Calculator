@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Claude Mortgage Calculator** is a comprehensive Next.js web application that provides advanced mortgage calculations, amortization schedules, paydown strategies, and break-even analysis for mortgage points. The application is designed to help homebuyers and homeowners make informed decisions about their mortgage financing.
+**Mortgage Tools Pro** is a comprehensive Next.js web application that provides advanced mortgage calculations, amortization schedules, paydown strategies, and break-even analysis for mortgage points. The application is designed to help homebuyers and homeowners make informed decisions about their mortgage financing.
 
 **Live URL**: `https://mortgagecalc.compound-interests.com`
 **Repository**: `https://github.com/jraitt/Claude-Mortgage-Calculator`
