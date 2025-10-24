@@ -32,95 +32,97 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
   const [showAmortization, setShowAmortization] = useState(false);
 
   return (
-    <div className="grid lg:grid-cols-2 gap-8">
-      {/* Input Form */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            <DollarSign size={24} />
-            Loan Details
-          </h2>
-          {typeof window !== 'undefined' && localStorage.getItem('mortgageCalculatorInputs') && (
-            <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-3 py-1 rounded-full border border-green-200 dark:border-green-700">
-              ✓ Previous data loaded
+    <>
+      <div className="grid lg:grid-cols-2 gap-8">
+        {/* Input Form */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <DollarSign size={24} />
+              Loan Details
+            </h2>
+            {typeof window !== 'undefined' && localStorage.getItem('mortgageCalculatorInputs') && (
+              <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-3 py-1 rounded-full border border-green-200 dark:border-green-700">
+                ✓ Previous data loaded
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-4">
+            <FormField
+              label="Home Price"
+              type="number"
+              value={inputs.homePrice}
+              onChange={(value) => updateInput('homePrice', value)}
+            />
+
+            <div>
+              <FormField
+                label="Down Payment"
+                type="number"
+                value={inputs.downPayment}
+                onChange={(value) => updateInput('downPayment', value)}
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {((inputs.downPayment / inputs.homePrice) * 100 || 0).toFixed(1)}% down
+              </p>
             </div>
-          )}
-        </div>
 
-        <div className="grid gap-4">
-          <FormField
-            label="Home Price"
-            type="number"
-            value={inputs.homePrice}
-            onChange={(value) => updateInput('homePrice', value)}
-          />
-
-          <div>
-            <FormField
-              label="Down Payment"
-              type="number"
-              value={inputs.downPayment}
-              onChange={(value) => updateInput('downPayment', value)}
-            />
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {((inputs.downPayment / inputs.homePrice) * 100 || 0).toFixed(1)}% down
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              label="Interest Rate (%)"
-              type="number"
-              step="0.01"
-              value={inputs.interestRate}
-              onChange={(value) => updateInput('interestRate', value)}
-            />
-
-            <FormField
-              label="Loan Term (years)"
-              type="select"
-              value={inputs.loanTerm}
-              onChange={(value) => updateInput('loanTerm', value)}
-              options={[
-                { value: 15, label: '15 years' },
-                { value: 20, label: '20 years' },
-                { value: 25, label: '25 years' },
-                { value: 30, label: '30 years' },
-              ]}
-            />
-          </div>
-
-          {!inputs.isExistingLoan && (
             <div className="grid grid-cols-2 gap-4">
               <FormField
-                label="Annual Property Tax"
+                label="Interest Rate (%)"
                 type="number"
-                value={inputs.propertyTax}
-                onChange={(value) => updateInput('propertyTax', value)}
+                step="0.01"
+                value={inputs.interestRate}
+                onChange={(value) => updateInput('interestRate', value)}
               />
 
               <FormField
-                label="Annual Home Insurance"
-                type="number"
-                value={inputs.homeInsurance}
-                onChange={(value) => updateInput('homeInsurance', value)}
+                label="Loan Term (years)"
+                type="select"
+                value={inputs.loanTerm}
+                onChange={(value) => updateInput('loanTerm', value)}
+                options={[
+                  { value: 15, label: '15 years' },
+                  { value: 20, label: '20 years' },
+                  { value: 25, label: '25 years' },
+                  { value: 30, label: '30 years' },
+                ]}
               />
             </div>
-          )}
 
-          <div>
-            <FormField
-              label={inputs.isExistingLoan ? 'PMI Amount $' : 'PMI Rate (% annual)'}
-              type="number"
-              step="0.01"
-              value={inputs.isExistingLoan ? inputs.pmiAmount : inputs.pmiRate}
-              onChange={(value) => updateInput(inputs.isExistingLoan ? 'pmiAmount' : 'pmiRate', value)}
-            />
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {inputs.isExistingLoan
-                ? 'Monthly PMI payment amount'
-                : `${ltvRatio > 78 ? 'PMI Required' : 'No PMI Required'} (LTV: ${ltvRatio.toFixed(1)}%)`}
-            </p>
+            {!inputs.isExistingLoan && (
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  label="Annual Property Tax"
+                  type="number"
+                  value={inputs.propertyTax}
+                  onChange={(value) => updateInput('propertyTax', value)}
+                />
+
+                <FormField
+                  label="Annual Home Insurance"
+                  type="number"
+                  value={inputs.homeInsurance}
+                  onChange={(value) => updateInput('homeInsurance', value)}
+                />
+              </div>
+            )}
+
+            <div>
+              <FormField
+                label={inputs.isExistingLoan ? 'PMI Amount $' : 'PMI Rate (% annual)'}
+                type="number"
+                step="0.01"
+                value={inputs.isExistingLoan ? inputs.pmiAmount : inputs.pmiRate}
+                onChange={(value) => updateInput(inputs.isExistingLoan ? 'pmiAmount' : 'pmiRate', value)}
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {inputs.isExistingLoan
+                  ? 'Monthly PMI payment amount'
+                  : `${ltvRatio > 78 ? 'PMI Required' : 'No PMI Required'} (LTV: ${ltvRatio.toFixed(1)}%)`}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -223,7 +225,7 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
       </div>
 
       {/* Amortization Schedule Section - Full Width */}
-      <div className="w-full mt-12 pt-8 border-t border-gray-200 dark:border-gray-700 px-6">
+      <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={() => setShowAmortization(!showAmortization)}
           className="flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -301,6 +303,6 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
