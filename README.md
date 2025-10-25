@@ -365,13 +365,22 @@ Contributions are welcome! Please follow these guidelines:
 - Run tests before submitting PR: `docker compose exec mortgage-calculator npm test`
 - Test your changes thoroughly before submitting PR
 
+### Testing
+
+Run the Jest + React Testing Library suites entirely inside Docker to avoid polluting the host environment:
+
+```bash
+docker compose run --rm mortgage-calculator npm test
+```
+
 ---
 
 ## Known Issues & Roadmap
 
 ### Current Limitations
-- Large component needs refactoring (see TASK-001 in `TASK.md`)
-- Input validation implemented for refinance calculator, needs expansion to other areas
+- Automated tests only cover validation and a few utilities; hooks, shared components, and tab views still need coverage (see TASK-002 in `TASK.md`)
+- Input validation improvements from the refinance work have not yet been rolled out to the other tabs
+- Mobile and accessibility refinements are pending while the responsive layout is revisited
 
 ### Upcoming Features
 - Chart visualizations for paydown strategies
@@ -430,4 +439,4 @@ For questions, issues, or feature requests:
 
 ---
 
-**Last Updated**: 2025-10-22
+**Last Updated**: 2025-10-24

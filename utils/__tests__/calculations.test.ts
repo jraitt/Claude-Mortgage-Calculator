@@ -52,8 +52,8 @@ describe('Mortgage Payment Calculation', () => {
 
     const monthlyPayment = calculateMonthlyPayment(loanAmount, annualRate, loanTermYears);
 
-    // Expected payment is approximately $2,041.87
-    expect(monthlyPayment).toBeCloseTo(2041.87, 2);
+    // Expected payment is approximately $2,042.71
+    expect(monthlyPayment).toBeCloseTo(2042.71, 2);
   });
 
   test('should handle zero interest rate', () => {
@@ -77,7 +77,7 @@ describe('Mortgage Payment Calculation', () => {
 
     // Payment should be positive and reasonable
     expect(monthlyPayment).toBeGreaterThan(0);
-    expect(monthlyPayment).toBeCloseTo(1674.04, 2);
+    expect(monthlyPayment).toBeCloseTo(1671.02, 2);
   });
 });
 

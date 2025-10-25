@@ -42,7 +42,7 @@ describe('validateRefinanceInputs', () => {
       currentBalance: 500, // Less than MIN_LOAN_AMOUNT
     });
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('at least'));
+    expect(result.errors.some((err) => err.includes('at least'))).toBe(true);
   });
 
   test('should fail with negative interest rate', () => {
@@ -51,7 +51,7 @@ describe('validateRefinanceInputs', () => {
       currentRate: -1,
     });
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('cannot be negative'));
+    expect(result.errors.some((err) => err.includes('cannot be negative'))).toBe(true);
   });
 
   test('should fail with interest rate too high', () => {
@@ -60,7 +60,7 @@ describe('validateRefinanceInputs', () => {
       newRate: 35, // Above MAX_INTEREST_RATE
     });
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('cannot exceed'));
+    expect(result.errors.some((err) => err.includes('cannot exceed'))).toBe(true);
   });
 
   test('should fail when monthly payment is too low to cover interest', () => {
@@ -70,7 +70,7 @@ describe('validateRefinanceInputs', () => {
       currentMonthlyPayment: 100, // Way too low for $300k loan at 10%
     });
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('too low to cover interest'));
+    expect(result.errors.some((err) => err.includes('too low to cover interest'))).toBe(true);
   });
 
   test('should fail with negative cash out', () => {
@@ -79,7 +79,7 @@ describe('validateRefinanceInputs', () => {
       cashOut: -5000,
     });
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('cannot be negative'));
+    expect(result.errors.some((err) => err.includes('cannot be negative'))).toBe(true);
   });
 
   test('should fail with cash out exceeding 80% of balance', () => {
@@ -88,7 +88,7 @@ describe('validateRefinanceInputs', () => {
       cashOut: 250000, // More than 80% of $300k
     });
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('cannot exceed 80%'));
+    expect(result.errors.some((err) => err.includes('cannot exceed 80%'))).toBe(true);
   });
 
   test('should fail with negative points', () => {
@@ -97,7 +97,7 @@ describe('validateRefinanceInputs', () => {
       newPoints: -1,
     });
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('cannot be negative'));
+    expect(result.errors.some((err) => err.includes('cannot be negative'))).toBe(true);
   });
 
   test('should fail with negative closing costs', () => {
@@ -106,7 +106,7 @@ describe('validateRefinanceInputs', () => {
       closingCosts: -1000,
     });
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('cannot be negative'));
+    expect(result.errors.some((err) => err.includes('cannot be negative'))).toBe(true);
   });
 });
 
@@ -140,7 +140,7 @@ describe('validateMortgageInputs', () => {
       interestRate: -1,
     });
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('cannot be negative'));
+    expect(result.errors.some((err) => err.includes('cannot be negative'))).toBe(true);
   });
 
   test('should fail with loan term too short', () => {
@@ -149,7 +149,7 @@ describe('validateMortgageInputs', () => {
       loanTerm: 0,
     });
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('at least'));
+    expect(result.errors.some((err) => err.includes('at least'))).toBe(true);
   });
 
   test('should fail with down payment exceeding home price', () => {
@@ -158,7 +158,7 @@ describe('validateMortgageInputs', () => {
       downPayment: 500000, // More than home price
     });
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('cannot exceed home price'));
+    expect(result.errors.some((err) => err.includes('cannot exceed home price'))).toBe(true);
   });
 });
 

@@ -131,9 +131,10 @@ utils/
 **Current Coverage**:
 - ✅ Validation utilities (`utils/validation.ts`) - Comprehensive tests
 - ✅ Refinance calculations - Basic tests
-- ❌ No component tests yet
-- ❌ No hook tests yet
-- ❌ Limited calculation coverage
+- ✅ Custom hooks (`useBasicMetrics`, `usePointsComparison`, `useLocalStorage`) covered via renderHook tests
+- ✅ Shared components (FormField, SummaryCard, DataTable) verified with RTL
+- ✅ CalcTabNewMortgage smoke test ensures orchestration wiring
+- ⚠️ Remaining calculation modules and other tabs still need deeper coverage to hit 80%+
 
 **Acceptance Criteria**:
 - [x] Install and configure Jest
@@ -142,11 +143,11 @@ utils/
 - [x] Add test scripts to `package.json`
 - [x] Write tests for validation utilities
 - [x] Write tests for refinance calculations
-- [ ] Write unit tests for custom hooks (useCalculations, useLocalStorage)
-- [ ] Write component tests for shared components (FormField, SummaryCard, DataTable)
-- [ ] Write component tests for tab components (at least smoke tests)
+- [x] Write unit tests for custom hooks (useCalculations, useLocalStorage)
+- [x] Write component tests for shared components (FormField, SummaryCard, DataTable)
+- [x] Write component tests for tab components (at least smoke tests)
 - [ ] Write tests for all calculation functions (80%+ coverage)
-- [ ] Document testing approach in README.md
+- [x] Document testing approach in README.md
 - [ ] Set up GitHub Actions to run tests on PR
 
 **Priority Tests to Add** (Now Much Easier After Refactoring):

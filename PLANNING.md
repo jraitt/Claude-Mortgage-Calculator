@@ -54,78 +54,70 @@ This project follows a Docker-first development approach. All development, testi
 
 ```
 mortgage-calculator/
-├── app/                          # Next.js App Router
-│   ├── globals.css              # Global styles & Tailwind imports
-│   ├── layout.tsx               # Root layout with ThemeProvider
-│   └── page.tsx                 # Home page (imports MortgageCalculator)
-│
-├── components/                   # React components
-│   └── MortgageCalculator.tsx   # Main calculator (1787 lines - NEEDS REFACTORING)
-│
-├── contexts/                     # React contexts
-│   └── ThemeContext.tsx         # Theme state management
-│
-├── utils/                        # Utility functions
-│   ├── csvExport.ts             # CSV generation and download utilities
-│   ├── constants.ts             # Application constants and validation limits
-│   ├── validation.ts            # Input validation utilities
-│   └── __tests__/               # Unit tests for utilities
-│       ├── calculations.test.ts # Tests for calculation functions
-│       └── validation.test.ts   # Tests for validation functions
-│
-├── .claude/                      # Claude Code configuration
-│
-├── Dockerfile                    # Docker image configuration
-├── docker-compose.yml            # Docker compose setup
-├── next.config.js                # Next.js configuration
-├── tailwind.config.js            # Tailwind CSS configuration
-├── tsconfig.json                 # TypeScript configuration
-├── package.json                  # Dependencies and scripts
-│
-├── CLAUDE.md                     # Project guidance for Claude Code
-├── PLANNING.md                   # This file - architecture and goals
-├── TASK.md                       # Task tracking
-└── README.md                     # User-facing documentation
+├─ app/
+│  ├─ globals.css              # Global styles & Tailwind imports
+│  ├─ layout.tsx               # Root layout with ThemeProvider
+│  └─ page.tsx                 # Home page that renders MortgageCalculator
+├─ components/
+│  ├─ MortgageCalculator.tsx   # Orchestrator (state + tab wiring)
+│  ├─ tabs/
+│  │  ├─ CalcTabNewMortgage.tsx
+│  │  ├─ CalcTabExistingMortgage.tsx
+│  │  ├─ CalcTabPoints.tsx
+│  │  ├─ CalcTabRefinance.tsx
+│  │  └─ index.ts
+│  └─ shared/
+│     ├─ FormField.tsx
+│     ├─ SummaryCard.tsx
+│     ├─ DataTable.tsx
+│     └─ index.ts
+├─ contexts/
+│  └─ ThemeContext.tsx
+├─ utils/
+│  ├─ calculations/
+│  │  ├─ basicCalculations.ts
+│  │  ├─ amortizationSchedule.ts
+│  │  ├─ pointsCalculations.ts
+│  │  └─ refinanceCalculations.ts
+│  ├─ hooks/
+│  │  ├─ useCalculations.ts
+│  │  └─ useLocalStorage.ts
+│  ├─ csvExport.ts
+│  ├─ constants.ts
+│  ├─ formatting.ts
+│  └─ validation.ts
+├─ utils/__tests__/
+│  ├─ calculations.test.ts
+│  └─ validation.test.ts
+├─ Dockerfile
+├─ docker-compose.yml
+├─ next.config.js
+├─ tailwind.config.js
+├─ tsconfig.json
+├─ package.json
+├─ CLAUDE.md
+├─ PLANNING.md
+├─ TASK.md
+└─ README.md
 ```
 
 ### Component Architecture
 
-**Current State (Monolithic)**
-- `MortgageCalculator.tsx` (~2350 lines) - Contains ALL functionality:
-  - Input form and state management
-  - Calculation logic for all scenarios
-  - Amortization schedule generation
-  - Paydown strategy calculations
-  - Points calculator logic
-  - Refinance calculator logic
-  - CSV export functionality
-  - Tab navigation and UI rendering
+The TASK-001 refactor is complete, so the codebase now follows a modular architecture:
 
-**Planned Refactoring (Modular)**
-The component exceeds the 500-line limit and should be split into:
+1. **MortgageCalculator Orchestrator**
+   - Keeps tab state, shares data between calculators, drives CSV exports, and persists inputs with `useLocalStorage`
+2. **Tab Components (`components/tabs/`)**
+   - Dedicated files for New Mortgage, Existing Mortgage, Points, and Refinance scenarios so each feature stays ~250–450 lines
+3. **Shared Components (`components/shared/`)**
+   - `FormField`, `SummaryCard`, and `DataTable` centralize common UI patterns and styling
+4. **Custom Hooks (`utils/hooks/`)**
+   - `useCalculations` exposes `useBasicMetrics`, `useAmortizationSchedules`, and `usePointsComparison`
+   - `useLocalStorage` wraps persistence logic used by the orchestrator and tabs
+5. **Calculation Modules (`utils/calculations/`)**
+   - Pure functions for payment math, amortization, points, and refinance analysis keep heavy logic outside React components
 
-1. **Core Calculator Logic** (`utils/calculations/`)
-   - `mortgageCalculations.ts` - Monthly payment, PMI, escrow calculations
-   - `amortization.ts` - Amortization schedule generation
-   - `paydownStrategies.ts` - Bi-weekly, extra payment calculations
-   - `pointsAnalysis.ts` - Break-even analysis for mortgage points
-
-2. **State Management** (`hooks/`)
-   - `useMortgageInputs.ts` - Input state and validation
-   - `useMortgageCalculations.ts` - Memoized calculation results
-
-3. **UI Components** (`components/mortgage/`)
-   - `MortgageCalculator.tsx` - Main container (orchestration only)
-   - `InputForm.tsx` - Loan input form
-   - `CalculatorTab.tsx` - Calculator summary view
-   - `AmortizationTab.tsx` - Amortization schedule table
-   - `PaydownStrategiesTab.tsx` - Strategy comparison
-   - `PointsCalculatorTab.tsx` - Points break-even analysis
-   - `AnalysisTab.tsx` - Financial analysis and charts
-   - `ScheduleComparisonTab.tsx` - Side-by-side schedule comparison
-
-4. **Types** (`types/`)
-   - `mortgage.types.ts` - TypeScript interfaces and types
+This structure enforces the <500 line guideline, improves testability, and lets new tabs slot in without touching existing views.
 
 ### Data Flow
 
@@ -143,52 +135,14 @@ Export (CSV Download)
 
 ### Key Features by Tab
 
-1. **Calculator Tab**
-   - Loan inputs (home price, down payment, rate, term)
-   - Monthly payment breakdown
-   - PMI and escrow calculations
-   - Existing loan support (current balance, payments made)
-
-2. **Amortization Tab**
-   - Month-by-month payment schedule
-   - Principal vs. interest breakdown
-   - Running balance
-   - Searchable and sortable table
-
-3. **Paydown Strategies Tab**
-   - Comparison of different paydown methods:
-     - Standard monthly payments
-     - Bi-weekly payments
-     - Extra monthly principal
-     - Double principal payments
-     - Extra annual payments
-   - Time and interest savings for each strategy
-
-4. **Schedule Comparison Tab**
-   - Side-by-side schedule comparison
-   - Visual differences between strategies
-
-5. **Points Calculator Tab**
-   - Multiple rate/points scenarios
-   - Break-even analysis vs. baseline
-   - Total cost comparison at 5, 10 years and full term
-   - Monthly savings calculations
-
-6. **Refinance Calculator Tab**
-   - Auto-populates current loan details
-   - New loan term and rate inputs
-   - Closing costs and points consideration
-   - Cash-out refinancing support
-   - Break-even analysis for refinancing
-   - Monthly payment comparison
-   - Long-term cost comparison (5, 10 years, full term)
-   - Smart recommendations based on break-even
-
-7. **Analysis Tab**
-   - Total interest paid
-   - Total cost of loan
-   - Payment breakdown visualization
-   - Long-term financial impact
+1. **New Mortgage (CalcTabNewMortgage)**
+   - Primary loan inputs, SummaryCard metrics, and on-demand amortization schedule with CSV export
+2. **Existing Mortgage (CalcTabExistingMortgage)**
+   - Paydown strategy controls (bi-weekly, extra principal, double payments) plus side-by-side schedule comparison and savings insights
+3. **Points Calculator (CalcTabPoints)**
+   - Multi-scenario management with baseline selection, break-even analysis, and cost comparisons at multiple time horizons
+4. **Refinance (CalcTabRefinance)**
+   - Auto-imports current loan data, compares new terms/closing costs, models cash-out, and surfaces break-even + recommendation copy
 
 ---
 
@@ -206,7 +160,7 @@ Export (CSV Download)
 ### Code Quality Standards
 
 1. **File Length Limit**: Maximum 500 lines per file
-   - **CRITICAL**: `MortgageCalculator.tsx` currently has 1787 lines and MUST be refactored
+   - Refactor completed in TASK-001 keeps `MortgageCalculator.tsx` at ~410 lines—maintain this standard for all new code
 
 2. **Type Safety**: All functions must have TypeScript type annotations
    - Use interfaces for complex objects
@@ -342,41 +296,37 @@ services:
 ## Future Enhancements
 
 ### High Priority
-1. **Refactor MortgageCalculator.tsx** - Split into modular components (CRITICAL - now ~2350 lines)
-2. **Expand Testing** - Add tests for all calculation functions and components
-3. **Expand Input Validation** - Apply validation to all tabs (currently only on refinance)
-4. **Mobile Optimization** - Improve responsive design for small screens
+1. **Expand Testing** - Cover hooks, shared components, tab components, and wire tests into CI (TASK-002)
+2. **Expand Input Validation** - Apply the validation utilities + FormField messaging across every tab (TASK-003)
+3. **Mobile & Accessibility Improvements** - Tighten responsive layouts, keyboard flows, and contrast (TASK-004 & TASK-008)
+4. **Performance Audit** - Profile renders and add memoization/react memo where needed (TASK-010)
 
 ### Medium Priority
-5. **Save/Load Sessions** - LocalStorage or database persistence
-6. **Print Styles** - Printer-friendly amortization schedules
-7. **Chart Visualization** - Add graphs for paydown comparison
-8. **Loan Comparison** - Compare multiple loan scenarios side-by-side
+5. **Chart Visualization** - Add charts for paydown strategies and refinance comparisons (TASK-006)
+6. **Session Persistence** - Allow saving/restoring scenarios via localStorage presets
+7. **Print-Friendly Styles** - Create printer-focused layouts for schedules and summaries
+8. **Loan Comparison Workspace** - Let users save and compare multiple loan setups side-by-side
 
 ### Low Priority
-9. **User Accounts** - Save multiple scenarios per user
-10. **Sharing** - Generate shareable links with encoded loan data
-11. **Advanced PMI** - Handle PMI removal at 80% LTV automatically
-
----
+9. **User Accounts** - Optional sign-in to sync scenarios across devices
+10. **Sharing** - Generate shareable links or exports tailored to advisors
+11. **Advanced PMI Handling** - Automatically remove PMI at 80% LTV and support lender-specific rules
 
 ## Known Issues & Technical Debt
 
 ### Critical
-1. **MortgageCalculator.tsx is ~2350 lines** - Violates 500-line rule, needs immediate refactoring (grew with refinance feature)
-2. **Limited Testing** - Only validation and some utilities tested, need full coverage
+1. **Limited Testing** - Hooks, shared components, and tab components still lack automated coverage
+2. **Partial Validation** - Only the refinance flow uses the new validation helpers; other tabs need parity
 
 ### Important
-3. **Partial Input Validation** - Refinance tab has validation, but other tabs need it too
-4. **No Error Boundaries** - App could crash without graceful error handling
-5. **Accessibility** - Not fully WCAG compliant, needs audit
+3. **No Error Boundaries** - Add a top-level error boundary to prevent full-app crashes
+4. **Accessibility Gaps** - Need Lighthouse/keyboard audits plus ARIA updates to shared inputs
+5. **Mobile Responsiveness** - Data-heavy tables require better small-screen layouts
 
 ### Minor
-6. **Console Warnings** - Some unused variables in development
-7. **CSV Export Filenames** - Could be more descriptive
-8. **No Loading States** - Large calculations appear to freeze UI briefly
-
----
+6. **Console Warnings** - Occasional dev-time warnings about unused variables or dependency arrays
+7. **CSV UX Enhancements** - Filenames and column selections could be more descriptive per tab
+8. **Perceived Loading States** - Long schedules can appear frozen without explicit progress indicators
 
 ## Dependencies & Version Management
 
@@ -408,4 +358,4 @@ services:
 
 ---
 
-Last Updated: 2025-10-22
+Last Updated: 2025-10-24
