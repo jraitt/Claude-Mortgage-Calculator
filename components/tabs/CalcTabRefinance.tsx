@@ -77,7 +77,8 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
             </label>
             <input
               type="number"
-              value={refinanceInputs.currentMonthlyPayment || ''}
+              step="0.01"
+              value={refinanceInputs.currentMonthlyPayment ? refinanceInputs.currentMonthlyPayment.toFixed(2) : ''}
               onChange={(e) =>
                 setRefinanceInputs({ ...refinanceInputs, currentMonthlyPayment: parseFloat(e.target.value) || 0 })
               }
@@ -144,6 +145,24 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
               className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Typical: 2-5% of loan amount</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Include Closing Costs in Loan
+            </label>
+            <select
+              value={refinanceInputs.includeClosingCostsInLoan ? 'yes' : 'no'}
+              onChange={(e) =>
+                setRefinanceInputs({ ...refinanceInputs, includeClosingCostsInLoan: e.target.value === 'yes' })
+              }
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            >
+              <option value="no">No - Pay out of pocket</option>
+              <option value="yes">Yes - Add to loan amount</option>
+            </select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {refinanceInputs.includeClosingCostsInLoan ? 'Will increase loan balance' : 'Pay upfront at closing'}
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cash Out ($)</label>
@@ -268,6 +287,27 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
               </tr>
             </thead>
             <tbody>
+              <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="p-3 border-b border-gray-100 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                  Loan Amount
+                </td>
+                <td className="p-3 border-b border-gray-100 dark:border-gray-700 text-right text-gray-900 dark:text-gray-100">
+                  {formatCurrency(refinanceInputs.currentBalance)}
+                </td>
+                <td className="p-3 border-b border-gray-100 dark:border-gray-700 text-right text-gray-900 dark:text-gray-100">
+                  {formatCurrency(refinanceResult.newLoanAmount)}
+                </td>
+                <td
+                  className={`p-3 border-b border-gray-100 dark:border-gray-700 text-right font-semibold ${
+                    refinanceResult.newLoanAmount > refinanceInputs.currentBalance
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-green-600 dark:text-green-400'
+                  }`}
+                >
+                  {refinanceResult.newLoanAmount > refinanceInputs.currentBalance ? '+' : '-'}
+                  {formatCurrency(Math.abs(refinanceResult.newLoanAmount - refinanceInputs.currentBalance))}
+                </td>
+              </tr>
               <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                 <td className="p-3 border-b border-gray-100 dark:border-gray-700 text-gray-900 dark:text-gray-100">
                   Monthly Payment

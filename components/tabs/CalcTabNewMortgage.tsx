@@ -91,36 +91,32 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
               />
             </div>
 
-            {!inputs.isExistingLoan && (
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  label="Annual Property Tax"
-                  type="number"
-                  value={inputs.propertyTax}
-                  onChange={(value) => updateInput('propertyTax', value)}
-                />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                label="Annual Property Tax"
+                type="number"
+                value={inputs.propertyTax}
+                onChange={(value) => updateInput('propertyTax', value)}
+              />
 
-                <FormField
-                  label="Annual Home Insurance"
-                  type="number"
-                  value={inputs.homeInsurance}
-                  onChange={(value) => updateInput('homeInsurance', value)}
-                />
-              </div>
-            )}
+              <FormField
+                label="Annual Home Insurance"
+                type="number"
+                value={inputs.homeInsurance}
+                onChange={(value) => updateInput('homeInsurance', value)}
+              />
+            </div>
 
             <div>
               <FormField
-                label={inputs.isExistingLoan ? 'PMI Amount $' : 'PMI Rate (% annual)'}
+                label="PMI Rate (% annual)"
                 type="number"
                 step="0.01"
-                value={inputs.isExistingLoan ? inputs.pmiAmount : inputs.pmiRate}
-                onChange={(value) => updateInput(inputs.isExistingLoan ? 'pmiAmount' : 'pmiRate', value)}
+                value={inputs.pmiRate}
+                onChange={(value) => updateInput('pmiRate', value)}
               />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {inputs.isExistingLoan
-                  ? 'Monthly PMI payment amount'
-                  : `${ltvRatio > 78 ? 'PMI Required' : 'No PMI Required'} (LTV: ${ltvRatio.toFixed(1)}%, Down Payment: ${((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}%)`}
+                {`${ltvRatio > 78 ? 'PMI Required' : 'No PMI Required'} (LTV: ${ltvRatio.toFixed(1)}%, Down Payment: ${((inputs.downPayment / inputs.homePrice) * 100).toFixed(1)}%)`}
               </p>
             </div>
           </div>
@@ -133,7 +129,7 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
           <div className="grid gap-4">
             <SummaryCard
               color="blue"
-              title={inputs.isExistingLoan ? 'Current Balance' : 'Loan Amount'}
+              title="Loan Amount"
               metrics={[{ label: 'Amount', value: formatCurrency(loanAmount) }]}
             />
 
@@ -167,28 +163,12 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
           <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
             <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">Loan Summary</h3>
             <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-              {inputs.isExistingLoan && (
-                <>
-                  <div className="flex justify-between">
-                    <span>Original Principal:</span>
-                    <span className="font-medium">{formatCurrency(inputs.originalPrincipal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Payments Made:</span>
-                    <span className="font-medium">{inputs.paymentsMade} of {inputs.loanTerm * 12}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Remaining Payments:</span>
-                    <span className="font-medium">{totalPayments}</span>
-                  </div>
-                </>
-              )}
               <div className="flex justify-between">
-                <span>{inputs.isExistingLoan ? 'Remaining Interest:' : 'Total Interest Paid:'}</span>
+                <span>Total Interest Paid:</span>
                 <span className="font-medium">{formatCurrency(standardSchedule[standardSchedule.length - 1]?.totalInterest || 0)}</span>
               </div>
               <div className="flex justify-between">
-                <span>{inputs.isExistingLoan ? 'Total Remaining Cost:' : 'Total Loan Cost:'}</span>
+                <span>Total Loan Cost:</span>
                 <span className="font-medium">{formatCurrency(loanAmount + (standardSchedule[standardSchedule.length - 1]?.totalInterest || 0))}</span>
               </div>
               <div className="flex justify-between">

@@ -25,10 +25,11 @@ const DEFAULT_INPUTS: MortgageInputs = {
   extraAnnualPayment: 0,
   biWeeklyPayments: false,
   isExistingLoan: false,
-  loanStartDate: '',
-  originalPrincipal: 0,
-  currentBalance: 0,
-  paymentsMade: 0
+  currentBalance: 300000,
+  existingInterestRate: 6.5,
+  existingMonthlyPayment: 2000,
+  paydownStrategy: 'extra-payments',
+  extraOneTimePayment: 0
 };
 
 /**

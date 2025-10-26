@@ -90,11 +90,12 @@ export function generateAmortizationSchedule(
     totalInterestPaid += interestPayment;
 
     // Calculate PMI based on updated LTV
+    // For existing loans, PMI tracking isn't applicable
     const currentLTV = inputs.isExistingLoan
-      ? (remainingBalance / inputs.originalPrincipal) * 100
+      ? 0
       : (remainingBalance / inputs.homePrice) * 100;
     const pmiPayment = inputs.isExistingLoan
-      ? (remainingBalance > 0 ? monthlyPMI : 0)
+      ? 0  // Existing loans don't track PMI in the schedule
       : (currentLTV > PMI_LTV_THRESHOLD ? monthlyPMI : 0);
 
     schedule.push({
@@ -154,10 +155,10 @@ function generateBiWeeklySchedule(
     // Add to schedule every 2 payments (monthly equivalent)
     if (paymentNumber % 2 === 0) {
       const currentLTV = inputs.isExistingLoan
-        ? (remainingBalance / inputs.originalPrincipal) * 100
+        ? 0
         : (remainingBalance / inputs.homePrice) * 100;
       const pmiPayment = inputs.isExistingLoan
-        ? (remainingBalance > 0 ? monthlyPMI : 0)
+        ? 0  // Existing loans don't track PMI
         : (currentLTV > PMI_LTV_THRESHOLD ? monthlyPMI : 0);
 
       schedule.push({

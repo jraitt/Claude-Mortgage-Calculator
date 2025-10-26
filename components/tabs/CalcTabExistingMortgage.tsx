@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { MortgageInputs } from '../MortgageCalculator';
-import { FormField, SummaryCard } from '../shared';
-import { formatCurrency } from '../../utils/formatting';
+import { MortgageInputs, PaydownStrategy } from '../MortgageCalculator';
+import { FormField, SummaryCard, Tooltip } from '../shared';
+import { formatCurrency, formatMonthsAsYearsMonths } from '../../utils/formatting';
+import { HelpCircle } from 'lucide-react';
 
 interface CalcTabExistingMortgageProps {
   inputs: MortgageInputs;
@@ -46,156 +47,157 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
       <div>
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Existing Loan Details</h2>
 
-        <div className="space-y-6">
-          {/* Existing Loan Inputs */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Loan Start Date</label>
-            <input
-              type="date"
-              value={inputs.loanStartDate}
-              onChange={(e) => setInputs((prev: MortgageInputs) => ({ ...prev, loanStartDate: e.target.value }))}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
-            />
-          </div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 space-y-6">
+          <FormField
+            label="Current Balance ($)"
+            type="number"
+            value={inputs.currentBalance}
+            onChange={(value) => updateInput('currentBalance', value)}
+            helpText="What you currently owe on your mortgage"
+          />
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              label="Original Principal"
-              type="number"
-              value={inputs.originalPrincipal}
-              onChange={(value) => updateInput('originalPrincipal', value)}
-            />
+          <FormField
+            label="Monthly Payment ($)"
+            type="number"
+            step="0.01"
+            value={inputs.existingMonthlyPayment}
+            onChange={(value) => updateInput('existingMonthlyPayment', value)}
+            helpText="Principal & Interest only (exclude taxes, insurance, PMI)"
+          />
 
-            <FormField
-              label="Current Balance"
-              type="number"
-              value={inputs.currentBalance}
-              onChange={(value) => updateInput('currentBalance', value)}
-            />
-          </div>
-
-          <div>
-            <FormField
-              label="Payments Already Made"
-              type="number"
-              value={inputs.paymentsMade}
-              onChange={(value) => updateInput('paymentsMade', value)}
-              helpText={`${inputs.paymentsMade} of ${inputs.loanTerm * 12} payments completed`}
-            />
-          </div>
+          <FormField
+            label="Interest Rate (%)"
+            type="number"
+            step="0.01"
+            value={inputs.existingInterestRate}
+            onChange={(value) => updateInput('existingInterestRate', value)}
+            helpText="Your current annual interest rate"
+          />
         </div>
       </div>
 
       <div>
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Paydown Options</h2>
 
-        <div className="space-y-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4">
+          {/* Radio Option 1: Extra Payments */}
           <div>
-            <label className="flex items-center gap-3 mb-4">
+            <label className="flex items-start gap-3 cursor-pointer">
               <input
-                type="checkbox"
-                checked={inputs.biWeeklyPayments}
+                type="radio"
+                name="paydownStrategy"
+                value="extra-payments"
+                checked={inputs.paydownStrategy === 'extra-payments'}
                 onChange={(e) =>
                   setInputs((prev: MortgageInputs) => ({
                     ...prev,
-                    biWeeklyPayments: e.target.checked,
-                    extraMonthlyPrincipal: e.target.checked ? 0 : prev.extraMonthlyPrincipal,
-                    doubleMonthlyPrincipal: e.target.checked ? false : prev.doubleMonthlyPrincipal,
-                    extraAnnualPayment: e.target.checked ? 0 : prev.extraAnnualPayment,
+                    paydownStrategy: e.target.value as PaydownStrategy,
+                    biWeeklyPayments: false,
+                    doubleMonthlyPrincipal: false,
                   }))
                 }
-                className="w-4 h-4 text-blue-600 dark:text-blue-400"
+                className="mt-1 w-4 h-4 text-blue-600 dark:text-blue-400"
               />
-              <span className="text-lg font-semibold text-blue-700 dark:text-blue-300">Bi-Weekly Payments</span>
-            </label>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 mb-6">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                <strong>How it works:</strong> Pay half your monthly payment ({formatCurrency(monthlyPI / 2)}) every two
-                weeks. This results in 26 payments per year (equivalent to 13 monthly payments), significantly reducing
-                your loan term and interest.
-              </p>
-              {inputs.biWeeklyPayments && (
-                <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-blue-600 dark:text-blue-300">Bi-weekly payment:</span>
-                    <div className="font-bold text-blue-800 dark:text-blue-200">{formatCurrency(monthlyPI / 2)}</div>
-                  </div>
-                  <div>
-                    <span className="text-blue-600 dark:text-blue-300">Annual total:</span>
-                    <div className="font-bold text-blue-800 dark:text-blue-200">
-                      {formatCurrency((monthlyPI / 2) * 26)}
-                    </div>
-                  </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-medium text-gray-900 dark:text-gray-100">
+                    Repayment with extra payments
+                  </span>
+                  <Tooltip content="Add extra principal payments monthly, annually, or as a one-time payment to pay off your loan faster.">
+                    <HelpCircle size={16} className="text-gray-400 dark:text-gray-500" />
+                  </Tooltip>
                 </div>
-              )}
-            </div>
+
+                {inputs.paydownStrategy === 'extra-payments' && (
+                  <div className="mt-3 space-y-3">
+                    <FormField
+                      label="Extra per month ($)"
+                      type="number"
+                      value={inputs.extraMonthlyPrincipal}
+                      onChange={(value) => updateInput('extraMonthlyPrincipal', value)}
+                      placeholder="0"
+                    />
+                    <FormField
+                      label="Extra per year ($)"
+                      type="number"
+                      value={inputs.extraAnnualPayment}
+                      onChange={(value) => updateInput('extraAnnualPayment', value)}
+                      placeholder="0"
+                      helpText="Applied every December"
+                    />
+                    <FormField
+                      label="Extra one time ($)"
+                      type="number"
+                      value={inputs.extraOneTimePayment}
+                      onChange={(value) => updateInput('extraOneTimePayment', value)}
+                      placeholder="0"
+                      helpText="Applied to next payment"
+                    />
+                  </div>
+                )}
+              </div>
+            </label>
           </div>
 
-          <div>
-            <label className="flex items-center gap-3 mb-4">
+          {/* Radio Option 2: Biweekly */}
+          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+            <label className="flex items-start gap-3 cursor-pointer">
               <input
-                type="checkbox"
-                checked={inputs.doubleMonthlyPrincipal}
+                type="radio"
+                name="paydownStrategy"
+                value="biweekly"
+                checked={inputs.paydownStrategy === 'biweekly'}
                 onChange={(e) =>
                   setInputs((prev: MortgageInputs) => ({
                     ...prev,
-                    doubleMonthlyPrincipal: e.target.checked,
-                    biWeeklyPayments: e.target.checked ? false : prev.biWeeklyPayments,
-                    extraMonthlyPrincipal: e.target.checked ? 0 : prev.extraMonthlyPrincipal,
-                    extraAnnualPayment: e.target.checked ? 0 : prev.extraAnnualPayment,
+                    paydownStrategy: e.target.value as PaydownStrategy,
+                    biWeeklyPayments: true,
+                    doubleMonthlyPrincipal: false,
+                    extraMonthlyPrincipal: 0,
+                    extraAnnualPayment: 0,
+                    extraOneTimePayment: 0,
                   }))
                 }
-                className="w-4 h-4 text-green-600 dark:text-green-400"
+                className="mt-1 w-4 h-4 text-blue-600 dark:text-blue-400"
               />
-              <span className="text-lg font-semibold text-green-700 dark:text-green-300">
-                Double Monthly Principal Payment
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-medium text-gray-900 dark:text-gray-100">Biweekly repayment</span>
+                <Tooltip content="Pay half your monthly payment every 2 weeks. Results in 26 payments/year (13 monthly payments), significantly reducing loan term.">
+                  <HelpCircle size={16} className="text-gray-400 dark:text-gray-500" />
+                </Tooltip>
+              </div>
             </label>
-            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800 mb-6">
-              <p className="text-sm text-green-700 dark:text-green-300">
-                <strong>How it works:</strong> Pay an extra principal amount equal to your regular principal payment (
-                {formatCurrency(monthlyPI - loanAmount * monthlyRate)}). This doubles the principal portion of each
-                payment, dramatically reducing your loan term.
-              </p>
-              {inputs.doubleMonthlyPrincipal && (
-                <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-green-600 dark:text-green-300">Regular principal:</span>
-                    <div className="font-bold text-green-800 dark:text-green-200">
-                      {formatCurrency(monthlyPI - loanAmount * monthlyRate)}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-green-600 dark:text-green-300">Total monthly payment:</span>
-                    <div className="font-bold text-green-800 dark:text-green-200">
-                      {formatCurrency(monthlyPI + (monthlyPI - loanAmount * monthlyRate))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
 
-          {!inputs.biWeeklyPayments && !inputs.doubleMonthlyPrincipal && (
-            <>
-              <FormField
-                label="Extra Monthly Principal"
-                type="number"
-                value={inputs.extraMonthlyPrincipal}
-                onChange={(value) => updateInput('extraMonthlyPrincipal', value)}
-                placeholder="0"
+          {/* Radio Option 3: Double Principal */}
+          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="paydownStrategy"
+                value="double-principal"
+                checked={inputs.paydownStrategy === 'double-principal'}
+                onChange={(e) =>
+                  setInputs((prev: MortgageInputs) => ({
+                    ...prev,
+                    paydownStrategy: e.target.value as PaydownStrategy,
+                    biWeeklyPayments: false,
+                    doubleMonthlyPrincipal: true,
+                    extraMonthlyPrincipal: 0,
+                    extraAnnualPayment: 0,
+                    extraOneTimePayment: 0,
+                  }))
+                }
+                className="mt-1 w-4 h-4 text-blue-600 dark:text-blue-400"
               />
-
-              <FormField
-                label="Extra Annual Payment"
-                type="number"
-                value={inputs.extraAnnualPayment}
-                onChange={(value) => updateInput('extraAnnualPayment', value)}
-                placeholder="0"
-                helpText="Applied every December (bonus, tax refund, etc.)"
-              />
-            </>
-          )}
+              <div className="flex items-center gap-2">
+                <span className="text-base font-medium text-gray-900 dark:text-gray-100">Double Principal</span>
+                <Tooltip content="Pay double the principal portion of your payment each month, dramatically accelerating loan payoff.">
+                  <HelpCircle size={16} className="text-gray-400 dark:text-gray-500" />
+                </Tooltip>
+              </div>
+            </label>
+          </div>
         </div>
       </div>
     </div>
@@ -210,7 +212,7 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
           color="red"
           title="Original Schedule"
           metrics={[
-            { label: 'Payoff Time', value: `${standardSchedule.length} months` },
+            { label: 'Payoff Time', value: formatMonthsAsYearsMonths(standardSchedule.length) },
             { label: 'Monthly Payment', value: formatCurrency(monthlyPI) },
             {
               label: 'Total Interest',
@@ -231,7 +233,7 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
               : 'No Strategy Selected'
           }
           metrics={[
-            { label: 'Payoff Time', value: `${paydownSchedule.length} months` },
+            { label: 'Payoff Time', value: formatMonthsAsYearsMonths(paydownSchedule.length) },
             {
               label: 'Payment Amount',
               value: inputs.biWeeklyPayments
@@ -251,7 +253,7 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
           color="blue"
           title="Savings"
           metrics={[
-            { label: 'Time Saved', value: `${standardSchedule.length - paydownSchedule.length} months` },
+            { label: 'Time Saved', value: formatMonthsAsYearsMonths(standardSchedule.length - paydownSchedule.length) },
             {
               label: 'Interest Saved',
               value: formatCurrency(
@@ -412,37 +414,6 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      </div>
-
-      {/* Schedule Information */}
-      <div className="mt-6 grid md:grid-cols-2 gap-4">
-        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-          <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Original Schedule Details</h4>
-          <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
-            <div className="flex justify-between">
-              <span>Total Payments:</span>
-              <span>{standardSchedule.length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Years to Pay Off:</span>
-              <span>{(standardSchedule.length / 12).toFixed(1)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-          <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Strategy Schedule Details</h4>
-          <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
-            <div className="flex justify-between">
-              <span>Total Payments:</span>
-              <span>{paydownSchedule.length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Years to Pay Off:</span>
-              <span>{(paydownSchedule.length / 12).toFixed(1)}</span>
-            </div>
           </div>
         </div>
       </div>

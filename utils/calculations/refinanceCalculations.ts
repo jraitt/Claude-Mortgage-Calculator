@@ -10,9 +10,10 @@ import { BREAK_EVEN_EXCELLENT, BREAK_EVEN_GOOD, BREAK_EVEN_MARGINAL, MINIMUM_BAL
  * Calculate comprehensive refinance analysis
  */
 export function calculateRefinanceAnalysis(refInputs: RefinanceInputs): RefinanceResult {
-  // New loan amount (current balance + cash out + points cost)
+  // New loan amount (current balance + cash out + points cost + closing costs if included)
   const pointsCost = refInputs.currentBalance * (refInputs.newPoints / 100);
-  const newLoanAmount = refInputs.currentBalance + refInputs.cashOut + pointsCost;
+  const closingCostsInLoan = refInputs.includeClosingCostsInLoan ? refInputs.closingCosts : 0;
+  const newLoanAmount = refInputs.currentBalance + refInputs.cashOut + pointsCost + closingCostsInLoan;
   const totalClosingCosts = refInputs.closingCosts + pointsCost;
 
   // Calculate new monthly payment
@@ -62,6 +63,7 @@ export function calculateRefinanceAnalysis(refInputs: RefinanceInputs): Refinanc
   const recommendation = generateRecommendation(breakEvenMonths, monthlySavings);
 
   return {
+    newLoanAmount,
     newMonthlyPayment,
     monthlySavings,
     totalClosingCosts,

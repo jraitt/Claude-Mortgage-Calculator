@@ -15,6 +15,8 @@ import {
 } from './tabs';
 
 // Define the type for mortgage calculator inputs
+export type PaydownStrategy = 'extra-payments' | 'biweekly' | 'double-principal';
+
 export type MortgageInputs = {
   homePrice: number;
   downPayment: number;
@@ -29,10 +31,11 @@ export type MortgageInputs = {
   extraAnnualPayment: number;
   biWeeklyPayments: boolean;
   isExistingLoan: boolean;
-  loanStartDate: string;
-  originalPrincipal: number;
   currentBalance: number;
-  paymentsMade: number;
+  existingInterestRate: number;
+  existingMonthlyPayment: number;
+  paydownStrategy: PaydownStrategy;
+  extraOneTimePayment: number;
 };
 
 // Points calculator types
@@ -68,9 +71,11 @@ export type RefinanceInputs = {
   closingCosts: number;
   cashOut: number;
   newPoints: number;
+  includeClosingCostsInLoan: boolean;
 };
 
 export type RefinanceResult = {
+  newLoanAmount: number;
   newMonthlyPayment: number;
   monthlySavings: number;
   totalClosingCosts: number;
@@ -105,10 +110,11 @@ const MortgageCalculator = () => {
     extraAnnualPayment: 0,
     biWeeklyPayments: false,
     isExistingLoan: false,
-    loanStartDate: new Date().toISOString().split('T')[0],
-    originalPrincipal: 320000,
     currentBalance: 300000,
-    paymentsMade: 24,
+    existingInterestRate: 6.5,
+    existingMonthlyPayment: 2000,
+    paydownStrategy: 'extra-payments',
+    extraOneTimePayment: 0,
   };
 
   // Load saved inputs from localStorage or use defaults
@@ -162,14 +168,22 @@ const MortgageCalculator = () => {
     closingCosts: 3000,
     cashOut: 0,
     newPoints: 0,
+    includeClosingCostsInLoan: false,
   });
   const [refinanceValidationErrors, setRefinanceValidationErrors] = useState<string[]>([]);
 
+  // Automatically set isExistingLoan based on active tab
+  // This ensures calculations use the correct mode for each tab
+  const effectiveInputs = {
+    ...inputs,
+    isExistingLoan: activeTab === 'strategies' || activeTab === 'refinance-calculator'
+  };
+
   // Use custom hooks for calculations
   const { loanAmount, monthlyRate, totalPayments, monthlyPI, ltvRatio, monthlyPMI, monthlyEscrow, totalMonthlyPayment } =
-    useBasicMetrics(inputs);
+    useBasicMetrics(effectiveInputs);
 
-  const { standardSchedule, paydownSchedule } = useAmortizationSchedules(inputs);
+  const { standardSchedule, paydownSchedule } = useAmortizationSchedules(effectiveInputs);
 
   // Save to localStorage
   useEffect(() => {
@@ -203,18 +217,30 @@ const MortgageCalculator = () => {
   // Sync refinance calculator when switching tabs
   useEffect(() => {
     if (activeTab === 'refinance-calculator') {
-      const remainingMonths = inputs.isExistingLoan
-        ? inputs.loanTerm * 12 - inputs.paymentsMade
-        : inputs.loanTerm * 12;
+      // Always use currentBalance and existingMonthlyPayment from Existing Mortgage tab if they differ from defaults
+      // This way users entering data in Existing Mortgage tab will see it auto-populate in Refinance
+      const hasExistingMortgageData = inputs.currentBalance !== defaultInputs.currentBalance ||
+                                       inputs.existingMonthlyPayment !== defaultInputs.existingMonthlyPayment;
+
+      const currentBalance = hasExistingMortgageData ? inputs.currentBalance : loanAmount;
+      const currentRate = hasExistingMortgageData ? inputs.existingInterestRate : inputs.interestRate;
+      const currentPayment = hasExistingMortgageData ? inputs.existingMonthlyPayment : monthlyPI;
+
+      // Calculate remaining months from balance, payment, and rate
+      const monthlyRate = currentRate / 100 / 12;
+      const remainingMonths = monthlyRate > 0
+        ? Math.round(Math.log(currentPayment / (currentPayment - currentBalance * monthlyRate)) / Math.log(1 + monthlyRate))
+        : Math.round(currentBalance / currentPayment);
+
       setRefinanceInputs((prev) => ({
         ...prev,
-        currentBalance: loanAmount,
-        currentRate: inputs.interestRate,
-        currentMonthlyPayment: monthlyPI,
+        currentBalance: currentBalance,
+        currentRate: currentRate,
+        currentMonthlyPayment: currentPayment,
         remainingMonths: remainingMonths,
       }));
     }
-  }, [activeTab, loanAmount, inputs.interestRate, monthlyPI, inputs.loanTerm, inputs.isExistingLoan, inputs.paymentsMade]);
+  }, [activeTab, loanAmount, inputs.interestRate, inputs.existingInterestRate, inputs.existingMonthlyPayment, monthlyPI, inputs.loanTerm, inputs.currentBalance]);
 
   // Validate refinance inputs
   useEffect(() => {
@@ -351,10 +377,6 @@ const MortgageCalculator = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-blue-100 dark:text-blue-200 text-sm flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                Auto-saving your inputs
-              </div>
               <button
                 onClick={toggleTheme}
                 className="bg-blue-500 dark:bg-blue-700 hover:bg-blue-400 dark:hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
@@ -370,13 +392,6 @@ const MortgageCalculator = () => {
               >
                 <Download size={16} />
                 Download .csv
-              </button>
-              <button
-                onClick={resetToDefaults}
-                className="bg-blue-500 dark:bg-blue-600 hover:bg-blue-400 dark:hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                title="Clear all saved data and reset to defaults"
-              >
-                Reset All
               </button>
             </div>
           </div>

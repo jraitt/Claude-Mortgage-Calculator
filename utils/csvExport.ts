@@ -95,35 +95,42 @@ export const prepareLoanSummaryData = (
     data.push(
       [''],
       ['EXISTING LOAN DETAILS'],
-      ['Original Principal', formatCurrency(inputs.originalPrincipal)],
       ['Current Balance', formatCurrency(inputs.currentBalance)],
-      ['Payments Made', `${inputs.paymentsMade} of ${inputs.loanTerm * 12}`],
-      ['Remaining Payments', `${inputs.loanTerm * 12 - inputs.paymentsMade}`]
+      ['Monthly Payment', formatCurrency(inputs.existingMonthlyPayment)],
+      ['Interest Rate', `${inputs.existingInterestRate}%`]
     );
   }
 
   if (hasPaydownStrategy) {
     data.push([''], ['PAYDOWN STRATEGY']);
-    
-    if (inputs.biWeeklyPayments) {
+
+    const strategyNames = {
+      'extra-payments': 'Extra Payments',
+      'biweekly': 'Biweekly Repayment',
+      'double-principal': 'Double Principal'
+    };
+
+    data.push(['Strategy', strategyNames[inputs.paydownStrategy] || 'Extra Payments']);
+
+    if (inputs.paydownStrategy === 'biweekly') {
       data.push(
-        ['Strategy', 'Bi-Weekly Payments'],
         ['Bi-Weekly Payment Amount', formatCurrency(monthlyPI / 2)],
         ['Annual Payment Total', formatCurrency((monthlyPI / 2) * 26)]
       );
-    } else if (inputs.doubleMonthlyPrincipal) {
+    } else if (inputs.paydownStrategy === 'double-principal') {
       data.push(
-        ['Strategy', 'Double Monthly Principal'],
         ['Extra Principal Payment', formatCurrency(monthlyPI - (loanAmount * (inputs.interestRate / 100 / 12)))],
         ['Total Monthly Payment', formatCurrency(monthlyPI + (monthlyPI - (loanAmount * (inputs.interestRate / 100 / 12))))]
       );
     } else {
-      data.push(['Strategy', 'Extra Payments']);
       if (inputs.extraMonthlyPrincipal > 0) {
         data.push(['Extra Monthly Principal', formatCurrency(inputs.extraMonthlyPrincipal)]);
       }
       if (inputs.extraAnnualPayment > 0) {
         data.push(['Extra Annual Payment', formatCurrency(inputs.extraAnnualPayment)]);
+      }
+      if (inputs.extraOneTimePayment > 0) {
+        data.push(['Extra One-Time Payment', formatCurrency(inputs.extraOneTimePayment)]);
       }
     }
 

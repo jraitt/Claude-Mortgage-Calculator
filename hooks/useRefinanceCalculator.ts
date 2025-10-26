@@ -11,15 +11,16 @@ import { validateRefinanceInputs, ValidationResult } from '../utils/validation';
  * Default refinance inputs
  */
 const DEFAULT_REFINANCE_INPUTS: RefinanceInputs = {
-  currentBalance: 320000,
+  currentBalance: 300000,
   currentRate: 6.5,
   currentMonthlyPayment: 2000,
-  remainingMonths: 360,
+  remainingMonths: 336,
   newRate: 6.0,
   newTerm: 30,
   closingCosts: 5000,
   cashOut: 0,
-  newPoints: 0
+  newPoints: 0,
+  includeClosingCostsInLoan: false
 };
 
 /**

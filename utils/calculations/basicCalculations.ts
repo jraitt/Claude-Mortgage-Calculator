@@ -21,15 +21,6 @@ export function calculateMonthlyRate(annualRate: number): number {
 }
 
 /**
- * Calculate total number of payments
- */
-export function calculateTotalPayments(inputs: MortgageInputs): number {
-  return inputs.isExistingLoan
-    ? (inputs.loanTerm * 12) - inputs.paymentsMade
-    : inputs.loanTerm * 12;
-}
-
-/**
  * Calculate monthly principal and interest payment
  * Handles both standard rates and zero interest rate edge case
  */
@@ -51,9 +42,7 @@ export function calculateMonthlyPI(
  */
 export function calculateLTVRatio(inputs: MortgageInputs, loanAmount: number): number {
   if (inputs.isExistingLoan) {
-    return inputs.originalPrincipal > 0
-      ? (inputs.currentBalance / inputs.originalPrincipal) * 100
-      : 0;
+    return 0; // LTV not applicable for existing loans
   }
 
   return inputs.homePrice > 0
@@ -110,7 +99,8 @@ export function calculateTotalMonthlyPayment(
 export function calculateBasicMetrics(inputs: MortgageInputs) {
   const loanAmount = calculateLoanAmount(inputs);
   const monthlyRate = calculateMonthlyRate(inputs.interestRate);
-  const totalPayments = calculateTotalPayments(inputs);
+  // Total payments is calculated in useBasicMetrics hook now
+  const totalPayments = inputs.loanTerm * 12;
   const monthlyPI = calculateMonthlyPI(loanAmount, monthlyRate, totalPayments);
   const ltvRatio = calculateLTVRatio(inputs, loanAmount);
   const monthlyPMI = calculateMonthlyPMI(inputs, loanAmount, ltvRatio);

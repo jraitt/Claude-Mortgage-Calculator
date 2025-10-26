@@ -16,24 +16,42 @@ export const useBasicMetrics = (inputs: MortgageInputs) => {
       ? inputs.currentBalance
       : inputs.homePrice - inputs.downPayment;
 
-    const monthlyRate = (inputs.interestRate || 0) / 100 / 12;
+    // Use existing loan interest rate when on Existing Mortgage tab
+    const interestRate = inputs.isExistingLoan ? inputs.existingInterestRate : inputs.interestRate;
+    const monthlyRate = (interestRate || 0) / 100 / 12;
 
-    const totalPayments = inputs.isExistingLoan
-      ? inputs.loanTerm * 12 - inputs.paymentsMade
-      : inputs.loanTerm * 12;
+    // Calculate total payments and monthly payment
+    let totalPayments: number;
+    let monthlyPI: number;
 
-    // Monthly principal and interest payment
-    const monthlyPI =
-      monthlyRate === 0
-        ? loanAmount / totalPayments
-        : (loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments))) /
-          (Math.pow(1 + monthlyRate, totalPayments) - 1);
+    if (inputs.isExistingLoan) {
+      // For existing loans, use the provided monthly payment and calculate remaining months
+      monthlyPI = inputs.existingMonthlyPayment;
 
-    // PMI calculation
+      // Calculate remaining months using amortization formula solved for n
+      // n = log(P / (P - B * r)) / log(1 + r)
+      // where P = monthly payment, B = balance, r = monthly rate
+      if (monthlyRate > 0 && monthlyPI > loanAmount * monthlyRate) {
+        totalPayments = Math.round(
+          Math.log(monthlyPI / (monthlyPI - loanAmount * monthlyRate)) / Math.log(1 + monthlyRate)
+        );
+      } else {
+        // If rate is 0 or payment is too low, use simple division
+        totalPayments = Math.round(loanAmount / (monthlyPI || 1));
+      }
+    } else {
+      // For new loans, calculate as normal
+      totalPayments = inputs.loanTerm * 12;
+      monthlyPI =
+        monthlyRate === 0
+          ? loanAmount / totalPayments
+          : (loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments))) /
+            (Math.pow(1 + monthlyRate, totalPayments) - 1);
+    }
+
+    // PMI calculation - for existing loans, we don't track LTV
     const ltvRatio = inputs.isExistingLoan
-      ? inputs.originalPrincipal > 0
-        ? (inputs.currentBalance / inputs.originalPrincipal) * 100
-        : 0
+      ? 0 // Not applicable for existing loans
       : inputs.homePrice > 0
       ? (loanAmount / inputs.homePrice) * 100
       : 0;
@@ -104,12 +122,10 @@ export const useAmortizationSchedules = (inputs: MortgageInputs) => {
           // Add to schedule every 2 payments (monthly equivalent)
           if (paymentNumber % 2 === 0) {
             const currentLTV = inputs.isExistingLoan
-              ? (remainingBalance / inputs.originalPrincipal) * 100
+              ? 0
               : (remainingBalance / inputs.homePrice) * 100;
             const pmiPayment = inputs.isExistingLoan
-              ? remainingBalance > 0
-                ? monthlyPMI
-                : 0
+              ? 0  // Existing loans don't track PMI
               : currentLTV > PMI_LTV_THRESHOLD
               ? monthlyPMI
               : 0;
@@ -158,12 +174,10 @@ export const useAmortizationSchedules = (inputs: MortgageInputs) => {
           totalInterestPaid += interestPayment;
 
           const currentLTV = inputs.isExistingLoan
-            ? (remainingBalance / inputs.originalPrincipal) * 100
+            ? 0
             : (remainingBalance / inputs.homePrice) * 100;
           const pmiPayment = inputs.isExistingLoan
-            ? remainingBalance > 0
-              ? monthlyPMI
-              : 0
+            ? 0  // Existing loans don't track PMI
             : currentLTV > PMI_LTV_THRESHOLD
             ? monthlyPMI
             : 0;
