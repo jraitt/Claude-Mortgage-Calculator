@@ -216,3 +216,142 @@ export function isValidPrincipalPayment(
   // Principal must be positive for the loan to be paid off
   return principalPayment > 0;
 }
+/**
+ * Validates points calculator inputs
+ */
+export function validatePointsInputs(inputs: {
+  loanAmount: number;
+  loanTerm: number;
+}): ValidationResult {
+  const errors: string[] = [];
+
+  // Loan amount validation
+  if (inputs.loanAmount < MIN_LOAN_AMOUNT) {
+    errors.push(`Loan amount must be at least ${MIN_LOAN_AMOUNT.toLocaleString()}`);
+  }
+  if (inputs.loanAmount > MAX_LOAN_AMOUNT) {
+    errors.push(`Loan amount cannot exceed ${MAX_LOAN_AMOUNT.toLocaleString()}`);
+  }
+
+  // Loan term validation
+  if (inputs.loanTerm < MIN_LOAN_TERM) {
+    errors.push(`Loan term must be at least ${MIN_LOAN_TERM} year`);
+  }
+  if (inputs.loanTerm > MAX_LOAN_TERM) {
+    errors.push(`Loan term cannot exceed ${MAX_LOAN_TERM} years`);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * Validates a points scenario
+ */
+export function validatePointsScenario(scenario: {
+  name: string;
+  rate: number;
+  points: number;
+}): ValidationResult {
+  const errors: string[] = [];
+
+  // Scenario name validation
+  if (!scenario.name || scenario.name.trim().length === 0) {
+    errors.push('Scenario name cannot be empty');
+  }
+  if (scenario.name.length > 50) {
+    errors.push('Scenario name cannot exceed 50 characters');
+  }
+
+  // Interest rate validation
+  if (scenario.rate < MIN_INTEREST_RATE) {
+    errors.push(`Interest rate cannot be negative`);
+  }
+  if (scenario.rate > MAX_INTEREST_RATE) {
+    errors.push(`Interest rate cannot exceed ${MAX_INTEREST_RATE}%`);
+  }
+
+  // Points validation
+  if (scenario.points < 0) {
+    errors.push('Points cannot be negative');
+  }
+  if (scenario.points > MAX_POINTS) {
+    errors.push(`Points cannot exceed ${MAX_POINTS}%`);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * Validates existing mortgage inputs for paydown strategies
+ */
+export function validateExistingMortgageInputs(inputs: {
+  originalPrincipal: number;
+  currentBalance: number;
+  paymentsMade: number;
+  loanTerm: number;
+  interestRate: number;
+  extraMonthlyPrincipal?: number;
+  extraAnnualPayment?: number;
+}): ValidationResult {
+  const errors: string[] = [];
+
+  // Original principal validation
+  if (inputs.originalPrincipal < MIN_LOAN_AMOUNT) {
+    errors.push(`Original principal must be at least ${MIN_LOAN_AMOUNT.toLocaleString()}`);
+  }
+  if (inputs.originalPrincipal > MAX_LOAN_AMOUNT) {
+    errors.push(`Original principal cannot exceed ${MAX_LOAN_AMOUNT.toLocaleString()}`);
+  }
+
+  // Current balance validation
+  if (inputs.currentBalance < 0) {
+    errors.push('Current balance cannot be negative');
+  }
+  if (inputs.currentBalance > inputs.originalPrincipal) {
+    errors.push('Current balance cannot exceed original principal');
+  }
+
+  // Payments made validation
+  const totalPayments = inputs.loanTerm * 12;
+  if (inputs.paymentsMade < 0) {
+    errors.push('Payments made cannot be negative');
+  }
+  if (inputs.paymentsMade > totalPayments) {
+    errors.push(`Payments made cannot exceed total loan payments (${totalPayments})`);
+  }
+
+  // Interest rate validation
+  if (inputs.interestRate < MIN_INTEREST_RATE) {
+    errors.push(`Interest rate cannot be negative`);
+  }
+  if (inputs.interestRate > MAX_INTEREST_RATE) {
+    errors.push(`Interest rate cannot exceed ${MAX_INTEREST_RATE}%`);
+  }
+
+  // Extra payment validations
+  if (inputs.extraMonthlyPrincipal !== undefined && inputs.extraMonthlyPrincipal < 0) {
+    errors.push('Extra monthly principal cannot be negative');
+  }
+  if (inputs.extraAnnualPayment !== undefined && inputs.extraAnnualPayment < 0) {
+    errors.push('Extra annual payment cannot be negative');
+  }
+
+  // Validate that extra payments are reasonable
+  if (inputs.extraMonthlyPrincipal && inputs.extraMonthlyPrincipal > inputs.currentBalance) {
+    errors.push('Extra monthly principal cannot exceed current balance');
+  }
+  if (inputs.extraAnnualPayment && inputs.extraAnnualPayment > inputs.currentBalance) {
+    errors.push('Extra annual payment cannot exceed current balance');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}

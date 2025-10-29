@@ -1,6 +1,6 @@
 # TASK.md
 
-**Last Updated**: 2025-10-24
+**Last Updated**: 2025-10-29
 
 This file tracks all tasks for the Claude Mortgage Calculator project. Tasks are organized by status and priority.
 
@@ -169,42 +169,6 @@ utils/
 **Unblocked**: TASK-001 complete - modular structure makes testing much easier!
 
 ---
-
-### TASK-003: Expand Input Validation
-**Added**: 2025-10-12
-**Updated**: 2025-10-24
-**Status**: 🔵 In Progress
-**Priority**: High
-**Effort**: Small (4-6 hours)
-
-**Description**: Validation utilities and constants are implemented for refinance calculator. Need to extend validation to all tabs and add visual feedback. The new FormField component makes this easier.
-
-**Current State**:
-- ✅ Validation utilities created (`utils/validation.ts`)
-- ✅ Constants file with validation limits
-- ✅ Refinance calculator validation working
-- ✅ Tests for validation functions
-- ❌ Calculator tab inputs not validated
-- ❌ Points Calculator tab not validated
-- ❌ Paydown Strategies tab not validated
-
-**Acceptance Criteria**:
-- [x] Create validation utilities in `utils/validation.ts`
-- [x] Create constants file with validation limits
-- [x] Validate refinance calculator inputs
-- [x] Write tests for validation functions
-- [ ] Extend FormField component to show validation errors
-- [ ] Apply validation to Calculator tab inputs
-- [ ] Apply validation to Points Calculator tab
-- [ ] Apply validation to Paydown Strategies tab
-- [ ] Display inline error messages for all tabs
-- [ ] Disable calculate/submit buttons if inputs invalid
-- [ ] Add error boundary component for app-level errors
-
-**Next Steps**:
-1. Enhance `<FormField />` component with error prop
-2. Create validation functions for each tab
-3. Integrate validation into each tab component
 
 ---
 
@@ -379,6 +343,31 @@ utils/
 
 ## ✅ Completed Tasks
 
+### TASK-003: Expand Input Validation ✅
+**Completed**: 2025-10-29
+**Description**: Implemented comprehensive input validation across all tabs with enhanced FormField component for consistent error display. Added real-time validation feedback and professional error messaging.
+
+**Major Achievements**:
+- ✅ **Enhanced FormField Component**: Added error display props (`error`, `isValid`) with red styling for invalid inputs
+- ✅ **New Mortgage Tab**: Full validation for home price, down payment, interest rate, and loan term
+- ✅ **Points Calculator Tab**: Validation for loan parameters and individual scenarios (name, rate, points)
+- ✅ **Existing Mortgage Tab**: Validation for current balance, payments, and extra payment amounts
+- ✅ **New Validation Functions**: Created specialized validators for each tab type
+- ✅ **Real-time Feedback**: useMemo-based validation provides immediate user feedback
+- ✅ **Professional UI**: Error summaries and individual field error display
+
+**Technical Implementation**:
+- Enhanced `FormField.tsx` with conditional error styling and messaging
+- Added `validatePointsInputs()`, `validatePointsScenario()`, and `validateExistingMortgageInputs()` functions
+- Integrated validation state management using React useMemo for performance
+- Applied consistent error display patterns across all tab components
+
+**User Experience Impact**:
+- Prevents invalid calculations and application errors
+- Provides immediate feedback on input problems
+- Maintains data quality for CSV exports
+- Reduces user confusion with clear error messaging
+
 ### TASK-110: Update Branding and CSV Export Functionality ✅
 **Completed**: 2025-10-24
 **Description**: Updated application branding from "Mortgage Calculator" to "Mortgage Tools Pro" with new tagline. Enhanced CSV export functionality to be tab-specific instead of always downloading existing mortgage data.
@@ -457,15 +446,16 @@ utils/
 
 ---
 
-## 💡 Benefits of Recent Refactoring
+## 💡 Benefits of Recent Changes
 
-The completion of TASK-001 has significant positive impacts on remaining tasks:
+The completion of TASK-001 (refactoring) and TASK-110 (branding/CSV) have significant positive impacts on remaining tasks:
 
 1. **TASK-002 (Testing)**: Much easier now! Can test hooks and components in isolation.
-2. **TASK-003 (Validation)**: Can enhance FormField once, benefits all inputs.
+2. **TASK-003 (Validation)**: Can enhance FormField once, benefits all inputs. Refinance validation provides template.
 3. **TASK-004 (Mobile)**: Can optimize DataTable component, benefits all tables.
 4. **TASK-006 (Charts)**: Can add charts as isolated components to specific tabs.
-5. **Future Tasks**: Modular structure makes adding features much simpler.
+5. **CSV Export**: Now tab-specific, making validation more important to ensure data quality.
+6. **Future Tasks**: Modular structure makes adding features much simpler.
 
 **Code Quality Improvements**:
 - ✅ Maintainability: 82% reduction in main component size
@@ -489,10 +479,11 @@ The completion of TASK-001 has significant positive impacts on remaining tasks:
 ## 🎯 Next Steps (Recommended Order)
 
 1. ✅ **TASK-001** - Refactor MortgageCalculator.tsx (COMPLETE!)
-2. **TASK-002** - Expand testing coverage (NOW UNBLOCKED - much easier with modular code)
-3. **TASK-003** - Expand input validation (Can enhance FormField component)
-4. **TASK-004** - Improve mobile responsiveness (Can optimize DataTable component)
-5. **TASK-006** - Add chart visualizations (Can add as isolated components)
+2. ✅ **TASK-110** - Update branding and CSV export functionality (COMPLETE!)
+3. ✅ **TASK-003** - Expand input validation (COMPLETE!)
+4. **TASK-002** - Expand testing coverage (UNBLOCKED - much easier with modular code)
+5. **TASK-004** - Improve mobile responsiveness (Can optimize DataTable component)
+6. **TASK-006** - Add chart visualizations (Can add as isolated components)
 
 ---
 

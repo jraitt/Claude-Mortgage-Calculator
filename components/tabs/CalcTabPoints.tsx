@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { PointsScenario, ComparisonResult } from '../MortgageCalculator';
 import { formatCurrency } from '../../utils/formatting';
+import { validatePointsInputs, validatePointsScenario } from '../../utils/validation';
+import { FormField } from '../shared';
 
 interface CalcTabPointsProps {
   scenarios: PointsScenario[];
@@ -96,6 +98,19 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
     };
   };
 
+  // Validate inputs
+  const validation = useMemo(() => {
+    return validatePointsInputs({
+      loanAmount: pointsCalcLoanAmount,
+      loanTerm: pointsCalcTerm,
+    });
+  }, [pointsCalcLoanAmount, pointsCalcTerm]);
+
+  // Validate scenarios
+  const scenarioValidations = useMemo(() => {
+    return scenarios.map(scenario => validatePointsScenario(scenario));
+  }, [scenarios]);
+
   // Calculate comparison results for all scenarios
   const comparisonResults = useMemo(() => {
     const baseline = scenarios.find((s) => s.isBaseline);
@@ -134,38 +149,54 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
         </button>
       </div>
 
+      {/* Validation Errors */}
+      {!validation.isValid && (
+        <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 dark:border-red-400 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">⚠️</span>
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-800 dark:text-red-200 mb-2">Invalid Input Detected</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-red-700 dark:text-red-300">
+                {validation.errors.map((error, idx) => (
+                  <li key={idx}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Common Inputs */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Loan Parameters</h3>
         <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Loan Amount</label>
-            <input
-              type="number"
-              value={pointsCalcLoanAmount}
-              onChange={(e) => setPointsCalcLoanAmount(parseFloat(e.target.value) || 0)}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Default from Calculator tab: {formatCurrency(loanAmount)}
-            </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Loan Term (years)
-            </label>
-            <select
-              value={pointsCalcTerm}
-              onChange={(e) => setPointsCalcTerm(parseInt(e.target.value))}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            >
-              <option value={15}>15 years</option>
-              <option value={20}>20 years</option>
-              <option value={25}>25 years</option>
-              <option value={30}>30 years</option>
-            </select>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Default from Calculator tab: {loanTerm} years</p>
-          </div>
+          <FormField
+            label="Loan Amount"
+            type="number"
+            value={pointsCalcLoanAmount}
+            onChange={(value) => setPointsCalcLoanAmount(parseFloat(value) || 0)}
+            error={validation.errors.find(e => e.toLowerCase().includes('loan amount'))}
+            isValid={!validation.errors.some(e => e.toLowerCase().includes('loan amount'))}
+            helpText={!validation.errors.some(e => e.toLowerCase().includes('loan amount')) ? 
+              `Default from Calculator tab: ${formatCurrency(loanAmount)}` : undefined}
+          />
+          
+          <FormField
+            label="Loan Term (years)"
+            type="select"
+            value={pointsCalcTerm}
+            onChange={(value) => setPointsCalcTerm(parseInt(value))}
+            error={validation.errors.find(e => e.toLowerCase().includes('loan term'))}
+            isValid={!validation.errors.some(e => e.toLowerCase().includes('loan term'))}
+            helpText={!validation.errors.some(e => e.toLowerCase().includes('loan term')) ? 
+              `Default from Calculator tab: ${loanTerm} years` : undefined}
+            options={[
+              { value: 15, label: '15 years' },
+              { value: 20, label: '20 years' },
+              { value: 25, label: '25 years' },
+              { value: 30, label: '30 years' },
+            ]}
+          />
         </div>
       </div>
 

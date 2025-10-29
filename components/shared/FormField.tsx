@@ -12,6 +12,8 @@ interface FormFieldProps {
   min?: number;
   max?: number;
   variant?: 'default' | 'light';
+  error?: string;
+  isValid?: boolean;
 }
 
 export const FormField: React.FC<FormFieldProps> = ({
@@ -26,10 +28,25 @@ export const FormField: React.FC<FormFieldProps> = ({
   min,
   max,
   variant = 'default',
+  error,
+  isValid = true,
 }) => {
-  const baseInputClasses = variant === 'light'
-    ? "w-full p-3 border border-gray-200 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-    : "w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400";
+  // Determine input classes based on validation state
+  const getInputClasses = () => {
+    const baseClasses = "w-full p-3 border rounded-lg focus:ring-2 transition-colors";
+    
+    if (error || !isValid) {
+      // Error state
+      return variant === 'light'
+        ? `${baseClasses} border-red-300 bg-red-50 text-red-900 focus:ring-red-400 focus:border-red-400`
+        : `${baseClasses} border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-100 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400`;
+    } else {
+      // Normal state
+      return variant === 'light'
+        ? `${baseClasses} border-gray-200 bg-white text-gray-900 focus:ring-blue-400 focus:border-blue-400`
+        : `${baseClasses} border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400`;
+    }
+  };
 
   const labelClasses = variant === 'light'
     ? "block text-sm font-medium text-gray-100 mb-2"
@@ -38,6 +55,10 @@ export const FormField: React.FC<FormFieldProps> = ({
   const helpTextClasses = variant === 'light'
     ? "mt-1 text-sm text-gray-200"
     : "mt-1 text-sm text-gray-500 dark:text-gray-400";
+
+  const errorClasses = variant === 'light'
+    ? "mt-1 text-sm text-red-200"
+    : "mt-1 text-sm text-red-600 dark:text-red-400";
 
   return (
     <div>
@@ -48,7 +69,7 @@ export const FormField: React.FC<FormFieldProps> = ({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={baseInputClasses}
+          className={getInputClasses()}
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>
@@ -61,14 +82,19 @@ export const FormField: React.FC<FormFieldProps> = ({
           type={type}
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
-          className={baseInputClasses}
+          className={getInputClasses()}
           step={step}
           placeholder={placeholder}
           min={min}
           max={max}
         />
       )}
-      {helpText && (
+      {error && (
+        <p className={errorClasses}>
+          {error}
+        </p>
+      )}
+      {helpText && !error && (
         <p className={helpTextClasses}>
           {helpText}
         </p>

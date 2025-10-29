@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DollarSign, ChevronUp, ChevronDown } from 'lucide-react';
 import { MortgageInputs } from '../MortgageCalculator';
 import { FormField, SummaryCard } from '../shared';
 import { formatCurrency } from '../../utils/formatting';
+import { validateMortgageInputs } from '../../utils/validation';
 
 interface CalcTabNewMortgageProps {
   inputs: MortgageInputs;
@@ -31,6 +32,32 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
 }) => {
   const [showAmortization, setShowAmortization] = useState(false);
 
+  // Validate inputs
+  const validation = useMemo(() => {
+    return validateMortgageInputs({
+      homePrice: inputs.homePrice,
+      downPayment: inputs.downPayment,
+      loanAmount: loanAmount,
+      interestRate: inputs.interestRate,
+      loanTerm: inputs.loanTerm,
+    });
+  }, [inputs.homePrice, inputs.downPayment, loanAmount, inputs.interestRate, inputs.loanTerm]);
+
+  // Individual field validation
+  const getFieldError = (field: string): string | undefined => {
+    if (validation.isValid) return undefined;
+    
+    const fieldErrors: { [key: string]: string[] } = {
+      homePrice: validation.errors.filter(e => e.toLowerCase().includes('home price')),
+      downPayment: validation.errors.filter(e => e.toLowerCase().includes('down payment')),
+      loanAmount: validation.errors.filter(e => e.toLowerCase().includes('loan amount')),
+      interestRate: validation.errors.filter(e => e.toLowerCase().includes('interest rate')),
+      loanTerm: validation.errors.filter(e => e.toLowerCase().includes('loan term')),
+    };
+    
+    return fieldErrors[field]?.[0];
+  };
+
   return (
     <>
       <div className="grid lg:grid-cols-2 gap-8">
@@ -48,12 +75,31 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
             )}
           </div>
 
+          {/* Validation Errors Summary */}
+          {!validation.isValid && (
+            <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 dark:border-red-400 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">⚠️</span>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-red-800 dark:text-red-200 mb-2">Invalid Input Detected</h3>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-red-700 dark:text-red-300">
+                    {validation.errors.map((error, idx) => (
+                      <li key={idx}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid gap-4">
             <FormField
               label="Home Price"
               type="number"
               value={inputs.homePrice}
               onChange={(value) => updateInput('homePrice', value)}
+              error={getFieldError('homePrice')}
+              isValid={!getFieldError('homePrice')}
             />
 
             <div>
@@ -62,10 +108,14 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
                 type="number"
                 value={inputs.downPayment}
                 onChange={(value) => updateInput('downPayment', value)}
+                error={getFieldError('downPayment')}
+                isValid={!getFieldError('downPayment')}
               />
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {((inputs.downPayment / inputs.homePrice) * 100 || 0).toFixed(1)}% down
-              </p>
+              {!getFieldError('downPayment') && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {((inputs.downPayment / inputs.homePrice) * 100 || 0).toFixed(1)}% down
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -75,6 +125,8 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
                 step="0.01"
                 value={inputs.interestRate}
                 onChange={(value) => updateInput('interestRate', value)}
+                error={getFieldError('interestRate')}
+                isValid={!getFieldError('interestRate')}
               />
 
               <FormField
@@ -82,6 +134,8 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
                 type="select"
                 value={inputs.loanTerm}
                 onChange={(value) => updateInput('loanTerm', value)}
+                error={getFieldError('loanTerm')}
+                isValid={!getFieldError('loanTerm')}
                 options={[
                   { value: 15, label: '15 years' },
                   { value: 20, label: '20 years' },

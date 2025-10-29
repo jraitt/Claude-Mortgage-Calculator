@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { MortgageInputs, PaydownStrategy } from '../MortgageCalculator';
 import { FormField, SummaryCard, Tooltip } from '../shared';
 import { formatCurrency, formatMonthsAsYearsMonths } from '../../utils/formatting';
 import { HelpCircle } from 'lucide-react';
+import { validateExistingMortgageInputs } from '../../utils/validation';
 
 interface CalcTabExistingMortgageProps {
   inputs: MortgageInputs;
@@ -29,6 +30,36 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
   const standardTableRef = useRef<HTMLDivElement>(null);
   const paydownTableRef = useRef<HTMLDivElement>(null);
 
+  // Validate existing mortgage inputs
+  const validation = useMemo(() => {
+    return validateExistingMortgageInputs({
+      originalPrincipal: loanAmount, // Use calculated loan amount as original principal
+      currentBalance: inputs.currentBalance,
+      paymentsMade: 0, // This field isn't in the current inputs type
+      loanTerm: inputs.loanTerm,
+      interestRate: inputs.existingInterestRate || inputs.interestRate,
+      extraMonthlyPrincipal: inputs.extraMonthlyPrincipal,
+      extraAnnualPayment: inputs.extraAnnualPayment,
+    });
+  }, [loanAmount, inputs.currentBalance, inputs.loanTerm, inputs.existingInterestRate, inputs.interestRate, inputs.extraMonthlyPrincipal, inputs.extraAnnualPayment]);
+
+  // Individual field validation
+  const getFieldError = (field: string): string | undefined => {
+    if (validation.isValid) return undefined;
+    
+    const fieldErrors: { [key: string]: string[] } = {
+      currentBalance: validation.errors.filter(e => e.toLowerCase().includes('current balance')),
+      loanTerm: validation.errors.filter(e => e.toLowerCase().includes('loan term')),
+      interestRate: validation.errors.filter(e => e.toLowerCase().includes('interest rate')),
+      existingInterestRate: validation.errors.filter(e => e.toLowerCase().includes('interest rate')),
+      existingMonthlyPayment: validation.errors.filter(e => e.toLowerCase().includes('monthly payment')),
+      extraMonthlyPrincipal: validation.errors.filter(e => e.toLowerCase().includes('extra monthly')),
+      extraAnnualPayment: validation.errors.filter(e => e.toLowerCase().includes('extra annual')),
+    };
+    
+    return fieldErrors[field]?.[0];
+  };
+
   const handleStandardScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (scrollLocked && paydownTableRef.current) {
       paydownTableRef.current.scrollTop = e.currentTarget.scrollTop;
@@ -43,6 +74,23 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
 
   return (
     <>
+      {/* Validation Errors */}
+      {!validation.isValid && (
+        <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 dark:border-red-400 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">⚠️</span>
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-800 dark:text-red-200 mb-2">Invalid Input Detected</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-red-700 dark:text-red-300">
+                {validation.errors.map((error, idx) => (
+                  <li key={idx}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-2 gap-8">
       <div>
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Existing Loan Details</h2>
@@ -53,7 +101,9 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
             type="number"
             value={inputs.currentBalance}
             onChange={(value) => updateInput('currentBalance', value)}
-            helpText="What you currently owe on your mortgage"
+            error={getFieldError('currentBalance')}
+            isValid={!getFieldError('currentBalance')}
+            helpText={!getFieldError('currentBalance') ? "What you currently owe on your mortgage" : undefined}
           />
 
           <FormField
@@ -62,7 +112,9 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
             step="0.01"
             value={inputs.existingMonthlyPayment}
             onChange={(value) => updateInput('existingMonthlyPayment', value)}
-            helpText="Principal & Interest only (exclude taxes, insurance, PMI)"
+            error={getFieldError('existingMonthlyPayment')}
+            isValid={!getFieldError('existingMonthlyPayment')}
+            helpText={!getFieldError('existingMonthlyPayment') ? "Principal & Interest only (exclude taxes, insurance, PMI)" : undefined}
           />
 
           <FormField
@@ -71,7 +123,9 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
             step="0.01"
             value={inputs.existingInterestRate}
             onChange={(value) => updateInput('existingInterestRate', value)}
-            helpText="Your current annual interest rate"
+            error={getFieldError('existingInterestRate')}
+            isValid={!getFieldError('existingInterestRate')}
+            helpText={!getFieldError('existingInterestRate') ? "Your current annual interest rate" : undefined}
           />
         </div>
       </div>
@@ -116,6 +170,8 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
                       value={inputs.extraMonthlyPrincipal}
                       onChange={(value) => updateInput('extraMonthlyPrincipal', value)}
                       placeholder="0"
+                      error={getFieldError('extraMonthlyPrincipal')}
+                      isValid={!getFieldError('extraMonthlyPrincipal')}
                     />
                     <FormField
                       label="Extra per year ($)"
@@ -123,7 +179,9 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
                       value={inputs.extraAnnualPayment}
                       onChange={(value) => updateInput('extraAnnualPayment', value)}
                       placeholder="0"
-                      helpText="Applied every December"
+                      error={getFieldError('extraAnnualPayment')}
+                      isValid={!getFieldError('extraAnnualPayment')}
+                      helpText={!getFieldError('extraAnnualPayment') ? "Applied every December" : undefined}
                     />
                     <FormField
                       label="Extra one time ($)"
