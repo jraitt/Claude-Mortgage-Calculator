@@ -16,10 +16,11 @@ const baseInputs: MortgageInputs = {
   extraAnnualPayment: 0,
   biWeeklyPayments: false,
   isExistingLoan: false,
-  loanStartDate: '2024-01-01',
-  originalPrincipal: 320000,
   currentBalance: 320000,
-  paymentsMade: 0,
+  existingInterestRate: 6.5,
+  existingMonthlyPayment: 1896.20,
+  paydownStrategy: 'extra-payments' as const,
+  extraOneTimePayment: 0,
 };
 
 describe('useBasicMetrics', () => {
@@ -50,7 +51,7 @@ describe('useBasicMetrics', () => {
       ...baseInputs,
       isExistingLoan: true,
       currentBalance: 250000,
-      paymentsMade: 60,
+
       pmiAmount: 250,
     };
 
