@@ -60,7 +60,7 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
 
   return (
     <>
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
         {/* Input Form */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
@@ -118,7 +118,7 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 label="Interest Rate (%)"
                 type="number"
@@ -145,7 +145,7 @@ export const CalcTabNewMortgage: React.FC<CalcTabNewMortgageProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 label="Annual Property Tax"
                 type="number"

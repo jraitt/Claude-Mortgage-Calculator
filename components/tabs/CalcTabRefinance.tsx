@@ -44,7 +44,7 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
       {/* Current Loan Details */}
       <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 p-6 rounded-lg border border-orange-200 dark:border-orange-800">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Current Loan Details</h3>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Balance</label>
             <input
@@ -105,7 +105,7 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
       {/* New Loan Details */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">New Loan Details</h3>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               New Interest Rate (%)
@@ -195,7 +195,7 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
       {/* Break-Even Analysis */}
       <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800">
         <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Break-Even Analysis</h3>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">New Monthly Payment</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -411,7 +411,7 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
       {/* Cost Comparison Over Time */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
         <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Cost Comparison Over Time</h3>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">After 5 Years</div>
             <div className="text-lg font-bold text-gray-900 dark:text-gray-100">

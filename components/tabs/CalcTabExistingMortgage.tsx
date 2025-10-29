@@ -91,7 +91,7 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
         </div>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
       <div>
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Existing Loan Details</h2>
 
@@ -265,7 +265,7 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
       <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Schedule Comparison</h2>
 
       {/* Summary Comparison */}
-      <div className="grid md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <SummaryCard
           color="red"
           title="Original Schedule"
@@ -348,7 +348,7 @@ export const CalcTabExistingMortgage: React.FC<CalcTabExistingMortgageProps> = (
       </div>
 
       {/* Side-by-Side Schedule Tables */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Original Schedule */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="bg-red-50 dark:bg-red-900/20 p-4 border-b border-red-200 dark:border-red-800">

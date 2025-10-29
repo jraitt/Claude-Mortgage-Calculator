@@ -169,7 +169,7 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
       {/* Common Inputs */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Loan Parameters</h3>
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             label="Loan Amount"
             type="number"
@@ -201,7 +201,7 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
       </div>
 
       {/* Scenario Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {scenarios.map((scenario, index) => (
           <div
             key={scenario.id}

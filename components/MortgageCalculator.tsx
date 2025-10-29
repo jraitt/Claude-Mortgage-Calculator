@@ -352,54 +352,60 @@ const MortgageCalculator = () => {
   }) => (
     <button
       onClick={() => onClick(id)}
-      className={`flex items-center gap-2 px-4 py-3 font-medium text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 transition-all relative ${
+      className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-3 font-medium text-xs sm:text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 transition-all relative whitespace-nowrap ${
         isActive
           ? 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-400 border-blue-500 dark:border-blue-400 shadow-sm z-10 -mb-px'
           : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-400'
       }`}
     >
-      <Icon size={16} />
-      {label}
+      <Icon size={14} className="sm:w-4 sm:h-4" />
+      <span className="hidden sm:inline">{label}</span>
+      <span className="sm:hidden">
+        {id === 'calculator' && 'New'}
+        {id === 'strategies' && 'Existing'}
+        {id === 'points-calculator' && 'Points'}
+        {id === 'refinance-calculator' && 'Refinance'}
+      </span>
     </button>
   );
 
   return (
-    <div className="max-w-7xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-900 dark:to-blue-950 text-white p-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-900 dark:to-blue-950 text-white p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Home size={32} />
+              <Home size={24} className="sm:w-8 sm:h-8" />
               <div>
-                <h1 className="text-3xl font-bold">Mortgage Tools Pro</h1>
-                <p className="text-blue-100 dark:text-blue-200 mt-1">Industry leading tools to help you with all your mortgage needs</p>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Mortgage Tools Pro</h1>
+                <p className="text-blue-100 dark:text-blue-200 mt-1 text-sm sm:text-base">Industry leading tools to help you with all your mortgage needs</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
               <button
                 onClick={toggleTheme}
-                className="bg-blue-500 dark:bg-blue-700 hover:bg-blue-400 dark:hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                className="bg-blue-500 dark:bg-blue-700 hover:bg-blue-400 dark:hover:bg-blue-600 text-white px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 sm:gap-2"
                 title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
               >
                 {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-                {theme === 'light' ? 'Dark' : 'Light'}
+                <span className="hidden sm:inline">{theme === 'light' ? 'Dark' : 'Light'}</span>
               </button>
               <button
                 onClick={handleDownloadCSV}
-                className="bg-green-600 dark:bg-green-700 hover:bg-green-500 dark:hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                className="bg-green-600 dark:bg-green-700 hover:bg-green-500 dark:hover:bg-green-600 text-white px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 sm:gap-2"
                 title="Download current tab data as CSV"
               >
                 <Download size={16} />
-                Download .csv
+                <span className="hidden sm:inline">Download .csv</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-700 px-6 pt-4">
-          <div className="flex space-x-1 -mb-px">
+        <div className="bg-white dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-700 px-4 sm:px-6 pt-4">
+          <div className="flex overflow-x-auto space-x-1 -mb-px scrollbar-hide">
             <TabButton id="calculator" label="New Mortgage" icon={Calculator} isActive={activeTab === 'calculator'} onClick={setActiveTab} />
             <TabButton id="strategies" label="Existing Mortgage" icon={TrendingDown} isActive={activeTab === 'strategies'} onClick={setActiveTab} />
             <TabButton id="points-calculator" label="Points Calculator" icon={Scale} isActive={activeTab === 'points-calculator'} onClick={setActiveTab} />
@@ -407,7 +413,7 @@ const MortgageCalculator = () => {
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* New Mortgage Tab */}
           {activeTab === 'calculator' && (
             <CalcTabNewMortgage
