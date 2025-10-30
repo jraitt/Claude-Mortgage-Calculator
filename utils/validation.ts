@@ -26,7 +26,6 @@ export function validateRefinanceInputs(inputs: {
   currentBalance: number;
   currentRate: number;
   currentMonthlyPayment: number;
-  remainingMonths: number;
   newRate: number;
   newTerm: number;
   closingCosts: number;
@@ -69,13 +68,7 @@ export function validateRefinanceInputs(inputs: {
     );
   }
 
-  // Remaining months validation
-  if (inputs.remainingMonths < MIN_REMAINING_MONTHS) {
-    errors.push(`Remaining months must be at least ${MIN_REMAINING_MONTHS}`);
-  }
-  if (inputs.remainingMonths > MAX_REMAINING_MONTHS) {
-    errors.push(`Remaining months cannot exceed ${MAX_REMAINING_MONTHS} (${MAX_REMAINING_MONTHS / 12} years)`);
-  }
+
 
   // New rate validation
   if (inputs.newRate < MIN_INTEREST_RATE) {

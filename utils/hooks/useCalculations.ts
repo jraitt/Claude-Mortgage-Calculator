@@ -91,7 +91,7 @@ export const useAmortizationSchedules = (inputs: MortgageInputs) => {
     useBasicMetrics(inputs);
 
   const generateSchedule = useMemo(() => {
-    return (extraMonthly = 0, doubleMonthly = false, extraAnnual = 0, biWeekly = false) => {
+    return (extraMonthly = 0, doubleMonthly = false, extraAnnual = 0, biWeekly = false, extraOneTime = 0) => {
       const schedule = [];
       let remainingBalance = loanAmount;
       let totalInterestPaid = 0;
@@ -166,6 +166,10 @@ export const useAmortizationSchedules = (inputs: MortgageInputs) => {
           if (month % 12 === 0) {
             extraPrincipal += extraAnnual;
           }
+          // Add one-time payment to the first month
+          if (month === 1) {
+            extraPrincipal += extraOneTime;
+          }
 
           // Don't pay more than remaining balance
           const totalPrincipal = Math.min(principalPayment + extraPrincipal, remainingBalance);
@@ -208,7 +212,8 @@ export const useAmortizationSchedules = (inputs: MortgageInputs) => {
         inputs.extraMonthlyPrincipal,
         inputs.doubleMonthlyPrincipal,
         inputs.extraAnnualPayment,
-        inputs.biWeeklyPayments
+        inputs.biWeeklyPayments,
+        inputs.extraOneTimePayment
       ),
     [generateSchedule, inputs]
   );

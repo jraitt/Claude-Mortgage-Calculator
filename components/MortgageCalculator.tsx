@@ -65,7 +65,6 @@ export type RefinanceInputs = {
   currentBalance: number;
   currentRate: number;
   currentMonthlyPayment: number;
-  remainingMonths: number;
   newRate: number;
   newTerm: number;
   closingCosts: number;
@@ -90,6 +89,9 @@ export type RefinanceResult = {
   costAt10Years: number;
   costAtFullTerm: number;
   recommendation: string;
+  recommendationType: 'excellent' | 'good' | 'marginal' | 'not-recommended';
+  analysisType: 'break-even' | 'time-savings';
+  remainingMonths: number;
 };
 
 const MortgageCalculator = () => {
@@ -152,24 +154,50 @@ const MortgageCalculator = () => {
     ];
   };
 
+  // Load saved refinance inputs from localStorage or use defaults
+  const loadSavedRefinanceInputs = (): RefinanceInputs => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('refinanceCalculatorInputs');
+        if (saved) {
+          const parsedInputs = JSON.parse(saved);
+          return { 
+            currentBalance: 300000,
+            currentRate: 6.5,
+            currentMonthlyPayment: 2000,
+            newRate: 5.5,
+            newTerm: 30,
+            closingCosts: 3000,
+            cashOut: 0,
+            newPoints: 0,
+            includeClosingCostsInLoan: false,
+            ...parsedInputs 
+          };
+        }
+      } catch (error) {
+        console.warn('Failed to load saved refinance calculator inputs:', error);
+      }
+    }
+    return {
+      currentBalance: 300000,
+      currentRate: 6.5,
+      currentMonthlyPayment: 2000,
+      newRate: 5.5,
+      newTerm: 30,
+      closingCosts: 3000,
+      cashOut: 0,
+      newPoints: 0,
+      includeClosingCostsInLoan: false,
+    };
+  };
+
   // State
   const [inputs, setInputs] = useState<MortgageInputs>(loadSavedInputs);
   const [activeTab, setActiveTab] = useState('calculator');
   const [scenarios, setScenarios] = useState<PointsScenario[]>(loadSavedScenarios);
   const [pointsCalcLoanAmount, setPointsCalcLoanAmount] = useState<number>(320000);
   const [pointsCalcTerm, setPointsCalcTerm] = useState<number>(30);
-  const [refinanceInputs, setRefinanceInputs] = useState<RefinanceInputs>({
-    currentBalance: 0,
-    currentRate: 0,
-    currentMonthlyPayment: 0,
-    remainingMonths: 0,
-    newRate: 5.5,
-    newTerm: 30,
-    closingCosts: 3000,
-    cashOut: 0,
-    newPoints: 0,
-    includeClosingCostsInLoan: false,
-  });
+  const [refinanceInputs, setRefinanceInputs] = useState<RefinanceInputs>(loadSavedRefinanceInputs);
   const [refinanceValidationErrors, setRefinanceValidationErrors] = useState<string[]>([]);
 
   // Automatically set isExistingLoan based on active tab
@@ -206,6 +234,16 @@ const MortgageCalculator = () => {
     }
   }, [scenarios]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('refinanceCalculatorInputs', JSON.stringify(refinanceInputs));
+      } catch (error) {
+        console.warn('Failed to save refinance calculator inputs:', error);
+      }
+    }
+  }, [refinanceInputs]);
+
   // Sync points calculator when switching tabs
   useEffect(() => {
     if (activeTab === 'points-calculator') {
@@ -214,33 +252,7 @@ const MortgageCalculator = () => {
     }
   }, [activeTab, loanAmount, inputs.loanTerm]);
 
-  // Sync refinance calculator when switching tabs
-  useEffect(() => {
-    if (activeTab === 'refinance-calculator') {
-      // Always use currentBalance and existingMonthlyPayment from Existing Mortgage tab if they differ from defaults
-      // This way users entering data in Existing Mortgage tab will see it auto-populate in Refinance
-      const hasExistingMortgageData = inputs.currentBalance !== defaultInputs.currentBalance ||
-                                       inputs.existingMonthlyPayment !== defaultInputs.existingMonthlyPayment;
 
-      const currentBalance = hasExistingMortgageData ? inputs.currentBalance : loanAmount;
-      const currentRate = hasExistingMortgageData ? inputs.existingInterestRate : inputs.interestRate;
-      const currentPayment = hasExistingMortgageData ? inputs.existingMonthlyPayment : monthlyPI;
-
-      // Calculate remaining months from balance, payment, and rate
-      const monthlyRate = currentRate / 100 / 12;
-      const remainingMonths = monthlyRate > 0
-        ? Math.round(Math.log(currentPayment / (currentPayment - currentBalance * monthlyRate)) / Math.log(1 + monthlyRate))
-        : Math.round(currentBalance / currentPayment);
-
-      setRefinanceInputs((prev) => ({
-        ...prev,
-        currentBalance: currentBalance,
-        currentRate: currentRate,
-        currentMonthlyPayment: currentPayment,
-        remainingMonths: remainingMonths,
-      }));
-    }
-  }, [activeTab, loanAmount, inputs.interestRate, inputs.existingInterestRate, inputs.existingMonthlyPayment, monthlyPI, inputs.loanTerm, inputs.currentBalance]);
 
   // Validate refinance inputs
   useEffect(() => {
@@ -254,9 +266,11 @@ const MortgageCalculator = () => {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('mortgageCalculatorInputs');
         localStorage.removeItem('pointsCalculatorScenarios');
+        localStorage.removeItem('refinanceCalculatorInputs');
       }
       setInputs(defaultInputs);
       setScenarios(loadSavedScenarios());
+      setRefinanceInputs(loadSavedRefinanceInputs());
       setPointsCalcLoanAmount(320000);
       setPointsCalcTerm(30);
     }

@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { RefinanceInputs, RefinanceResult } from '../MortgageCalculator';
 import { calculateRefinanceAnalysis } from '../../utils/calculations/refinanceCalculations';
-import { formatCurrency } from '../../utils/formatting';
+import { formatCurrency, formatMonthsAsYearsMonths } from '../../utils/formatting';
+import { SummaryCard } from '../shared';
 
 interface CalcTabRefinanceProps {
   refinanceInputs: RefinanceInputs;
@@ -14,9 +15,86 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
   setRefinanceInputs,
   refinanceValidationErrors,
 }) => {
+  const [scrollLocked, setScrollLocked] = useState(true);
+  const currentTableRef = useRef<HTMLDivElement>(null);
+  const newTableRef = useRef<HTMLDivElement>(null);
+
   const refinanceResult = useMemo(() => {
     return calculateRefinanceAnalysis(refinanceInputs);
   }, [refinanceInputs]);
+
+  // Generate amortization schedules for comparison
+  const { currentSchedule, newSchedule } = useMemo(() => {
+    // Generate current loan schedule
+    const currentMonthlyRate = refinanceInputs.currentRate / 100 / 12;
+    const currentSchedule = [];
+    let currentBalance = refinanceInputs.currentBalance;
+    let totalInterest = 0;
+
+    // Calculate remaining months for current loan
+    const remainingMonths = refinanceResult.remainingMonths;
+    
+    for (let month = 1; month <= remainingMonths && currentBalance > 0.01; month++) {
+      const interestPayment = currentBalance * currentMonthlyRate;
+      let principalPayment = refinanceInputs.currentMonthlyPayment - interestPayment;
+      
+      if (principalPayment <= 0) break;
+      
+      principalPayment = Math.min(principalPayment, currentBalance);
+      currentBalance -= principalPayment;
+      totalInterest += interestPayment;
+
+      currentSchedule.push({
+        month,
+        payment: refinanceInputs.currentMonthlyPayment,
+        principal: principalPayment,
+        interest: interestPayment,
+        balance: currentBalance,
+        totalInterest
+      });
+    }
+
+    // Generate new loan schedule
+    const newMonthlyRate = refinanceInputs.newRate / 100 / 12;
+    const newSchedule = [];
+    let newBalance = refinanceResult.newLoanAmount;
+    let newTotalInterest = 0;
+    const newTermMonths = refinanceInputs.newTerm * 12;
+
+    for (let month = 1; month <= newTermMonths && newBalance > 0.01; month++) {
+      const interestPayment = newBalance * newMonthlyRate;
+      let principalPayment = refinanceResult.newMonthlyPayment - interestPayment;
+      
+      if (principalPayment <= 0) break;
+      
+      principalPayment = Math.min(principalPayment, newBalance);
+      newBalance -= principalPayment;
+      newTotalInterest += interestPayment;
+
+      newSchedule.push({
+        month,
+        payment: refinanceResult.newMonthlyPayment,
+        principal: principalPayment,
+        interest: interestPayment,
+        balance: newBalance,
+        totalInterest: newTotalInterest
+      });
+    }
+
+    return { currentSchedule, newSchedule };
+  }, [refinanceInputs, refinanceResult]);
+
+  const handleCurrentScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (scrollLocked && newTableRef.current) {
+      newTableRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
+
+  const handleNewScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (scrollLocked && currentTableRef.current) {
+      currentTableRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -44,7 +122,7 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
       {/* Current Loan Details */}
       <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 p-6 rounded-lg border border-orange-200 dark:border-orange-800">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Current Loan Details</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Balance</label>
             <input
@@ -78,25 +156,17 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
             <input
               type="number"
               step="0.01"
-              value={refinanceInputs.currentMonthlyPayment ? refinanceInputs.currentMonthlyPayment.toFixed(2) : ''}
+              value={refinanceInputs.currentMonthlyPayment || ''}
               onChange={(e) =>
-                setRefinanceInputs({ ...refinanceInputs, currentMonthlyPayment: parseFloat(e.target.value) || 0 })
-              }
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Remaining Months</label>
-            <input
-              type="number"
-              value={refinanceInputs.remainingMonths || ''}
-              onChange={(e) =>
-                setRefinanceInputs({ ...refinanceInputs, remainingMonths: parseFloat(e.target.value) || 0 })
+                setRefinanceInputs({ 
+                  ...refinanceInputs, 
+                  currentMonthlyPayment: e.target.value === '' ? 0 : parseFloat(e.target.value) 
+                })
               }
               className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {(refinanceInputs.remainingMonths / 12).toFixed(1)} years remaining
+              Principal & Interest only
             </p>
           </div>
         </div>
@@ -105,7 +175,9 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
       {/* New Loan Details */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">New Loan Details</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        {/* Top row: Interest rate, loan term, include closing costs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               New Interest Rate (%)
@@ -137,16 +209,6 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Closing Costs ($)</label>
-            <input
-              type="number"
-              value={refinanceInputs.closingCosts || ''}
-              onChange={(e) => setRefinanceInputs({ ...refinanceInputs, closingCosts: parseFloat(e.target.value) || 0 })}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Typical: 2-5% of loan amount</p>
-          </div>
-          <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Include Closing Costs in Loan
             </label>
@@ -164,15 +226,19 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
               {refinanceInputs.includeClosingCostsInLoan ? 'Will increase loan balance' : 'Pay upfront at closing'}
             </p>
           </div>
+        </div>
+
+        {/* Bottom row: Closing costs, points, cash out */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cash Out ($)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Closing Costs ($)</label>
             <input
               type="number"
-              value={refinanceInputs.cashOut || ''}
-              onChange={(e) => setRefinanceInputs({ ...refinanceInputs, cashOut: parseFloat(e.target.value) || 0 })}
+              value={refinanceInputs.closingCosts || ''}
+              onChange={(e) => setRefinanceInputs({ ...refinanceInputs, closingCosts: parseFloat(e.target.value) || 0 })}
               className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Optional: Take cash from equity</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Typical: 2-5% of loan amount</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Points (%)</label>
@@ -189,12 +255,24 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
               Cost: {formatCurrency(refinanceInputs.currentBalance * (refinanceInputs.newPoints / 100))}
             </p>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cash Out ($)</label>
+            <input
+              type="number"
+              value={refinanceInputs.cashOut || ''}
+              onChange={(e) => setRefinanceInputs({ ...refinanceInputs, cashOut: parseFloat(e.target.value) || 0 })}
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Optional: Take cash from equity</p>
+          </div>
         </div>
       </div>
 
-      {/* Break-Even Analysis */}
+      {/* Analysis Section */}
       <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Break-Even Analysis</h3>
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">
+          {refinanceResult.analysisType === 'time-savings' ? 'Time Savings Analysis' : 'Break-Even Analysis'}
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">New Monthly Payment</div>
@@ -220,12 +298,25 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Break-Even Point</div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {refinanceResult.breakEvenMonths === Infinity ? 'Never' : `${Math.round(refinanceResult.breakEvenMonths)} mo`}
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+              {refinanceResult.analysisType === 'time-savings' ? 'Time Saved' : 'Break-Even Point'}
+            </div>
+            <div className={`text-2xl font-bold ${
+              refinanceResult.analysisType === 'time-savings' 
+                ? ((refinanceResult.remainingMonths - refinanceInputs.newTerm * 12) >= 60 
+                   ? 'text-green-600 dark:text-green-400' 
+                   : 'text-blue-600 dark:text-blue-400')
+                : 'text-blue-600 dark:text-blue-400'
+            }`}>
+              {refinanceResult.analysisType === 'time-savings' 
+                ? `${((refinanceResult.remainingMonths - refinanceInputs.newTerm * 12) / 12).toFixed(1)} yrs`
+                : refinanceResult.breakEvenMonths === Infinity ? 'Never' : `${Math.round(refinanceResult.breakEvenMonths)} mo`
+              }
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {refinanceResult.breakEvenMonths !== Infinity
+              {refinanceResult.analysisType === 'time-savings'
+                ? 'Earlier payoff'
+                : refinanceResult.breakEvenMonths !== Infinity
                 ? `${(refinanceResult.breakEvenMonths / 12).toFixed(1)} years`
                 : 'Payment increased'}
             </div>
@@ -247,17 +338,21 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
       {/* Recommendation */}
       <div
         className={`p-6 rounded-lg border-2 ${
-          refinanceResult.breakEvenMonths < 60 && refinanceResult.monthlySavings > 0
+          refinanceResult.recommendationType === 'excellent'
             ? 'bg-green-50 dark:bg-green-900/20 border-green-500 dark:border-green-400'
-            : refinanceResult.breakEvenMonths < 120 && refinanceResult.monthlySavings > 0
+            : refinanceResult.recommendationType === 'good'
+            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-400'
+            : refinanceResult.recommendationType === 'marginal'
             ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500 dark:border-yellow-400'
             : 'bg-red-50 dark:bg-red-900/20 border-red-500 dark:border-red-400'
         }`}
       >
         <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3">
-          {refinanceResult.breakEvenMonths < 60 && refinanceResult.monthlySavings > 0
+          {refinanceResult.recommendationType === 'excellent'
             ? '✅ '
-            : refinanceResult.breakEvenMonths < 120 && refinanceResult.monthlySavings > 0
+            : refinanceResult.recommendationType === 'good'
+            ? '👍 '
+            : refinanceResult.recommendationType === 'marginal'
             ? '⚠️ '
             : '❌ '}
           Recommendation
@@ -350,19 +445,19 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
               <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                 <td className="p-3 border-b border-gray-100 dark:border-gray-700 text-gray-900 dark:text-gray-100">Loan Term</td>
                 <td className="p-3 border-b border-gray-100 dark:border-gray-700 text-right text-gray-900 dark:text-gray-100">
-                  {(refinanceInputs.remainingMonths / 12).toFixed(1)} years
+                  {(refinanceResult.remainingMonths / 12).toFixed(1)} years
                 </td>
                 <td className="p-3 border-b border-gray-100 dark:border-gray-700 text-right text-gray-900 dark:text-gray-100">
                   {refinanceInputs.newTerm} years
                 </td>
                 <td
                   className={`p-3 border-b border-gray-100 dark:border-gray-700 text-right font-semibold ${
-                    refinanceInputs.newTerm < refinanceInputs.remainingMonths / 12
+                    refinanceInputs.newTerm < refinanceResult.remainingMonths / 12
                       ? 'text-green-600 dark:text-green-400'
                       : 'text-gray-600 dark:text-gray-400'
                   }`}
                 >
-                  {(refinanceInputs.newTerm - refinanceInputs.remainingMonths / 12).toFixed(1)} years
+                  {(refinanceInputs.newTerm - refinanceResult.remainingMonths / 12).toFixed(1)} years
                 </td>
               </tr>
               <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -408,123 +503,203 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
         </div>
       </div>
 
-      {/* Cost Comparison Over Time */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Cost Comparison Over Time</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">After 5 Years</div>
-            <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              {formatCurrency(refinanceResult.costAt5Years)}
+      {/* Amortization Schedule Comparison Section - Full Width */}
+      <div className="space-y-6 mt-12 pt-8 border-t border-gray-200 dark:border-gray-700 -mx-6 px-6">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Amortization Schedule Comparison</h2>
+
+        {/* Summary Comparison */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          <SummaryCard
+            color="red"
+            title="Current Loan"
+            metrics={[
+              { label: 'Remaining Time', value: formatMonthsAsYearsMonths(currentSchedule.length) },
+              { label: 'Monthly Payment', value: formatCurrency(refinanceInputs.currentMonthlyPayment) },
+              {
+                label: 'Remaining Interest',
+                value: formatCurrency(currentSchedule[currentSchedule.length - 1]?.totalInterest || 0),
+              },
+            ]}
+          />
+
+          <SummaryCard
+            color="blue"
+            title="New Loan"
+            metrics={[
+              { label: 'Loan Term', value: formatMonthsAsYearsMonths(newSchedule.length) },
+              { label: 'Monthly Payment', value: formatCurrency(refinanceResult.newMonthlyPayment) },
+              {
+                label: 'Total Interest',
+                value: formatCurrency(newSchedule[newSchedule.length - 1]?.totalInterest || 0),
+              },
+            ]}
+          />
+
+          <SummaryCard
+            color="green"
+            title="Comparison"
+            metrics={[
+              { 
+                label: 'Time Difference', 
+                value: formatMonthsAsYearsMonths(Math.abs(currentSchedule.length - newSchedule.length))
+              },
+              {
+                label: 'Payment Difference',
+                value: `${refinanceResult.monthlySavings >= 0 ? '-' : '+'}${formatCurrency(Math.abs(refinanceResult.monthlySavings))}/mo`,
+              },
+              {
+                label: 'Interest Difference',
+                value: `${refinanceResult.interestSavings >= 0 ? '-' : '+'}${formatCurrency(Math.abs(refinanceResult.interestSavings))}`,
+              },
+            ]}
+          />
+        </div>
+
+        {/* Scroll Lock Control */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setScrollLocked(!scrollLocked)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              scrollLocked
+                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            {scrollLocked ? '🔒' : '🔓'} {scrollLocked ? 'Unlock' : 'Lock'} Scrolling
+          </button>
+        </div>
+
+        {/* Side-by-Side Schedule Tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Current Loan Schedule */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="bg-red-50 dark:bg-red-900/20 p-4 border-b border-red-200 dark:border-red-800">
+              <h3 className="font-semibold text-red-800 dark:text-red-200">Current Loan Schedule</h3>
+              <p className="text-sm text-red-600 dark:text-red-300">
+                {refinanceInputs.currentRate.toFixed(3)}% • {formatMonthsAsYearsMonths(currentSchedule.length)} remaining
+              </p>
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {refinanceResult.breakEvenMonths < 60 && refinanceResult.breakEvenMonths !== Infinity
-                ? '✓ Break-even achieved'
-                : refinanceResult.breakEvenMonths !== Infinity
-                ? `Need ${Math.round(refinanceResult.breakEvenMonths - 60)} more months`
-                : 'No break-even'}
+            <div
+              ref={currentTableRef}
+              onScroll={handleCurrentScroll}
+              className={`max-h-[600px] overflow-y-auto ${scrollLocked ? 'border-2 border-blue-200 dark:border-blue-700' : ''}`}
+            >
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                  <tr>
+                    <th className="text-left p-2 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">
+                      Month
+                    </th>
+                    <th className="text-right p-2 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">
+                      Payment
+                    </th>
+                    <th className="text-right p-2 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">
+                      Principal
+                    </th>
+                    <th className="text-right p-2 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">
+                      Interest
+                    </th>
+                    <th className="text-right p-2 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">
+                      Balance
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentSchedule.map((payment, index) => (
+                    <tr
+                      key={index}
+                      className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <td className="p-2 text-gray-900 dark:text-gray-100">{payment.month}</td>
+                      <td className="p-2 text-right text-gray-900 dark:text-gray-100">
+                        {formatCurrency(payment.payment)}
+                      </td>
+                      <td className="p-2 text-right text-gray-900 dark:text-gray-100">
+                        {formatCurrency(payment.principal)}
+                      </td>
+                      <td className="p-2 text-right text-gray-900 dark:text-gray-100">
+                        {formatCurrency(payment.interest)}
+                      </td>
+                      <td className="p-2 text-right text-gray-900 dark:text-gray-100">
+                        {formatCurrency(payment.balance)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">After 10 Years</div>
-            <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              {formatCurrency(refinanceResult.costAt10Years)}
+
+          {/* New Loan Schedule */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 border-b border-blue-200 dark:border-blue-800">
+              <h3 className="font-semibold text-blue-800 dark:text-blue-200">New Loan Schedule</h3>
+              <p className="text-sm text-blue-600 dark:text-blue-300">
+                {refinanceInputs.newRate.toFixed(3)}% • {refinanceInputs.newTerm} year term
+              </p>
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {refinanceResult.breakEvenMonths < 120 && refinanceResult.breakEvenMonths !== Infinity
-                ? '✓ Break-even achieved'
-                : refinanceResult.breakEvenMonths !== Infinity
-                ? `Need ${Math.round(refinanceResult.breakEvenMonths - 120)} more months`
-                : 'No break-even'}
+            <div
+              ref={newTableRef}
+              onScroll={handleNewScroll}
+              className={`max-h-[600px] overflow-y-auto ${scrollLocked ? 'border-2 border-blue-200 dark:border-blue-700' : ''}`}
+            >
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                  <tr>
+                    <th className="text-left p-2 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">
+                      Month
+                    </th>
+                    <th className="text-right p-2 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">
+                      Payment
+                    </th>
+                    <th className="text-right p-2 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">
+                      Principal
+                    </th>
+                    <th className="text-right p-2 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">
+                      Interest
+                    </th>
+                    <th className="text-right p-2 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100">
+                      Balance
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {newSchedule.map((payment, index) => (
+                    <tr
+                      key={index}
+                      className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <td className="p-2 text-gray-900 dark:text-gray-100">{payment.month}</td>
+                      <td className="p-2 text-right text-gray-900 dark:text-gray-100">
+                        {formatCurrency(payment.payment)}
+                      </td>
+                      <td className="p-2 text-right text-gray-900 dark:text-gray-100">
+                        {formatCurrency(payment.principal)}
+                      </td>
+                      <td className="p-2 text-right text-gray-900 dark:text-gray-100">
+                        {formatCurrency(payment.interest)}
+                      </td>
+                      <td className="p-2 text-right text-gray-900 dark:text-gray-100">
+                        {formatCurrency(payment.balance)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              Full Term ({refinanceInputs.newTerm} years)
-            </div>
-            <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              {formatCurrency(refinanceResult.costAtFullTerm)}
-            </div>
-            <div className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Total cost including closing</div>
           </div>
         </div>
+
+        {scrollLocked && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mt-4">
+            <p className="text-blue-800 dark:text-blue-200 text-sm">
+              🔒 <strong>Scroll Lock Active:</strong> Both tables will scroll together. Click "Unlock Scrolling" to
+              scroll independently.
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Key Insights */}
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-lg border border-purple-200 dark:border-purple-800">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Key Insights</h3>
-        <div className="space-y-3 text-sm">
-          <div className="flex items-start gap-3 bg-white dark:bg-gray-800 p-3 rounded">
-            <span className="text-2xl">💰</span>
-            <div>
-              <div className="font-semibold text-gray-800 dark:text-gray-100">Monthly Cash Flow Impact</div>
-              <div className="text-gray-600 dark:text-gray-400">
-                Your monthly payment will {refinanceResult.monthlySavings > 0 ? 'decrease' : 'increase'} by{' '}
-                <strong>{formatCurrency(Math.abs(refinanceResult.monthlySavings))}</strong>.
-                {refinanceResult.monthlySavings > 0 &&
-                  ` That's ${formatCurrency(Math.abs(refinanceResult.monthlySavings) * 12)}/year in savings.`}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 bg-white dark:bg-gray-800 p-3 rounded">
-            <span className="text-2xl">⏰</span>
-            <div>
-              <div className="font-semibold text-gray-800 dark:text-gray-100">Time Horizon</div>
-              <div className="text-gray-600 dark:text-gray-400">
-                {refinanceResult.breakEvenMonths !== Infinity ? (
-                  <>
-                    You need to stay in the home for at least{' '}
-                    <strong>
-                      {Math.round(refinanceResult.breakEvenMonths)} months (
-                      {(refinanceResult.breakEvenMonths / 12).toFixed(1)} years)
-                    </strong>{' '}
-                    to break even on closing costs.
-                  </>
-                ) : (
-                  'Your monthly payment increases, so there is no break-even point from a payment perspective.'
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 bg-white dark:bg-gray-800 p-3 rounded">
-            <span className="text-2xl">📊</span>
-            <div>
-              <div className="font-semibold text-gray-800 dark:text-gray-100">Long-term Savings</div>
-              <div className="text-gray-600 dark:text-gray-400">
-                {refinanceResult.netSavings > 0 ? (
-                  <>
-                    Over the life of the loan, you'll save a net{' '}
-                    <strong className="text-green-600 dark:text-green-400">
-                      {formatCurrency(refinanceResult.netSavings)}
-                    </strong>{' '}
-                    after accounting for closing costs.
-                  </>
-                ) : (
-                  <>
-                    Over the life of the loan, you'll pay an additional{' '}
-                    <strong className="text-red-600 dark:text-red-400">
-                      {formatCurrency(Math.abs(refinanceResult.netSavings))}
-                    </strong>{' '}
-                    compared to keeping your current loan.
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-          {refinanceInputs.cashOut > 0 && (
-            <div className="flex items-start gap-3 bg-white dark:bg-gray-800 p-3 rounded">
-              <span className="text-2xl">💵</span>
-              <div>
-                <div className="font-semibold text-gray-800 dark:text-gray-100">Cash-Out Refinance</div>
-                <div className="text-gray-600 dark:text-gray-400">
-                  You're taking out <strong>{formatCurrency(refinanceInputs.cashOut)}</strong> in cash, which will be
-                  added to your new loan balance.
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 };

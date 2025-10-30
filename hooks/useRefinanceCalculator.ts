@@ -14,7 +14,6 @@ const DEFAULT_REFINANCE_INPUTS: RefinanceInputs = {
   currentBalance: 300000,
   currentRate: 6.5,
   currentMonthlyPayment: 2000,
-  remainingMonths: 336,
   newRate: 6.0,
   newTerm: 30,
   closingCosts: 5000,
@@ -29,15 +28,13 @@ const DEFAULT_REFINANCE_INPUTS: RefinanceInputs = {
 export function useRefinanceCalculator(
   initialBalance?: number,
   initialRate?: number,
-  initialPayment?: number,
-  initialRemainingMonths?: number
+  initialPayment?: number
 ) {
   const [refinanceInputs, setRefinanceInputs] = useState<RefinanceInputs>({
     ...DEFAULT_REFINANCE_INPUTS,
     ...(initialBalance !== undefined && { currentBalance: initialBalance }),
     ...(initialRate !== undefined && { currentRate: initialRate }),
-    ...(initialPayment !== undefined && { currentMonthlyPayment: initialPayment }),
-    ...(initialRemainingMonths !== undefined && { remainingMonths: initialRemainingMonths })
+    ...(initialPayment !== undefined && { currentMonthlyPayment: initialPayment })
   });
 
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -66,13 +63,12 @@ export function useRefinanceCalculator(
   /**
    * Update current loan details from main calculator
    */
-  const syncFromCalculator = (balance: number, rate: number, payment: number, remainingMonths: number) => {
+  const syncFromCalculator = (balance: number, rate: number, payment: number) => {
     setRefinanceInputs(prev => ({
       ...prev,
       currentBalance: balance,
       currentRate: rate,
-      currentMonthlyPayment: payment,
-      remainingMonths: remainingMonths
+      currentMonthlyPayment: payment
     }));
   };
 
