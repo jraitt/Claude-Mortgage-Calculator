@@ -31,6 +31,8 @@ export const FormField: React.FC<FormFieldProps> = ({
   error,
   isValid = true,
 }) => {
+  // Generate unique ID for label association
+  const fieldId = `field-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Math.random().toString(36).substr(2, 9)}`;
   // Determine input classes based on validation state
   const getInputClasses = () => {
     const baseClasses = "w-full p-3 border rounded-lg focus:ring-2 transition-colors";
@@ -62,11 +64,12 @@ export const FormField: React.FC<FormFieldProps> = ({
 
   return (
     <div>
-      <label className={labelClasses}>
+      <label htmlFor={fieldId} className={labelClasses}>
         {label}
       </label>
       {type === 'select' && options ? (
         <select
+          id={fieldId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={getInputClasses()}
@@ -79,12 +82,13 @@ export const FormField: React.FC<FormFieldProps> = ({
         </select>
       ) : (
         <input
+          id={fieldId}
           type={type}
-          value={value || ''}
+          value={type === 'number' ? (value || '') : (value ?? '')}
           onChange={(e) => onChange(e.target.value)}
           className={getInputClasses()}
           step={step}
-          placeholder={placeholder}
+          placeholder={placeholder || (type === 'number' ? '0' : undefined)}
           min={min}
           max={max}
         />

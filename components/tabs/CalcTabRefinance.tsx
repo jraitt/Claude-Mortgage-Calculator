@@ -2,7 +2,7 @@ import React, { useMemo, useState, useRef } from 'react';
 import { RefinanceInputs, RefinanceResult } from '../MortgageCalculator';
 import { calculateRefinanceAnalysis } from '../../utils/calculations/refinanceCalculations';
 import { formatCurrency, formatMonthsAsYearsMonths } from '../../utils/formatting';
-import { SummaryCard } from '../shared';
+import { SummaryCard, FormField } from '../shared';
 
 interface CalcTabRefinanceProps {
   refinanceInputs: RefinanceInputs;
@@ -123,52 +123,27 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
       <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 p-6 rounded-lg border border-orange-200 dark:border-orange-800">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Current Loan Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Balance</label>
-            <input
-              type="number"
-              value={refinanceInputs.currentBalance || ''}
-              onChange={(e) =>
-                setRefinanceInputs({ ...refinanceInputs, currentBalance: parseFloat(e.target.value) || 0 })
-              }
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Rate (%)</label>
-            <input
-              type="number"
-              step="0.001"
-              value={refinanceInputs.currentRate || ''}
-              onChange={(e) =>
-                setRefinanceInputs({
-                  ...refinanceInputs,
-                  currentRate: e.target.value === '' ? 0 : parseFloat(e.target.value),
-                })
-              }
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Current Monthly Payment
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={refinanceInputs.currentMonthlyPayment || ''}
-              onChange={(e) =>
-                setRefinanceInputs({ 
-                  ...refinanceInputs, 
-                  currentMonthlyPayment: e.target.value === '' ? 0 : parseFloat(e.target.value) 
-                })
-              }
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Principal & Interest only
-            </p>
-          </div>
+          <FormField
+            label="Current Balance"
+            type="number"
+            value={refinanceInputs.currentBalance}
+            onChange={(value) => setRefinanceInputs({ ...refinanceInputs, currentBalance: parseFloat(value) || 0 })}
+          />
+          <FormField
+            label="Current Rate (%)"
+            type="number"
+            step="0.001"
+            value={refinanceInputs.currentRate}
+            onChange={(value) => setRefinanceInputs({ ...refinanceInputs, currentRate: parseFloat(value) || 0 })}
+          />
+          <FormField
+            label="Current Monthly Payment"
+            type="number"
+            step="0.01"
+            value={refinanceInputs.currentMonthlyPayment}
+            onChange={(value) => setRefinanceInputs({ ...refinanceInputs, currentMonthlyPayment: parseFloat(value) || 0 })}
+            helpText="Principal & Interest only"
+          />
         </div>
       </div>
 
@@ -187,8 +162,9 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
               step="0.001"
               value={refinanceInputs.newRate || ''}
               onChange={(e) =>
-                setRefinanceInputs({ ...refinanceInputs, newRate: e.target.value === '' ? 0 : parseFloat(e.target.value) })
+                setRefinanceInputs({ ...refinanceInputs, newRate: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })
               }
+              placeholder="0"
               className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
           </div>
@@ -235,7 +211,8 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
             <input
               type="number"
               value={refinanceInputs.closingCosts || ''}
-              onChange={(e) => setRefinanceInputs({ ...refinanceInputs, closingCosts: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setRefinanceInputs({ ...refinanceInputs, closingCosts: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
+              placeholder="0"
               className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Typical: 2-5% of loan amount</p>
@@ -247,8 +224,9 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
               step="0.125"
               value={refinanceInputs.newPoints || ''}
               onChange={(e) =>
-                setRefinanceInputs({ ...refinanceInputs, newPoints: e.target.value === '' ? 0 : parseFloat(e.target.value) })
+                setRefinanceInputs({ ...refinanceInputs, newPoints: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })
               }
+              placeholder="0"
               className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -260,7 +238,8 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
             <input
               type="number"
               value={refinanceInputs.cashOut || ''}
-              onChange={(e) => setRefinanceInputs({ ...refinanceInputs, cashOut: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setRefinanceInputs({ ...refinanceInputs, cashOut: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
+              placeholder="0"
               className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Optional: Take cash from equity</p>

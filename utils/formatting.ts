@@ -46,10 +46,10 @@ export function formatPercentage(value: number, decimalPlaces = 2): string {
 
 /**
  * Format a number of months as years and months
- * e.g., 25 months -> "2 years 1 month"
+ * e.g., 25 months -> "2 years, 1 month"
  */
 export function formatMonthsAsYearsMonths(months: number): string {
-  if (!isFinite(months) || isNaN(months)) {
+  if (!isFinite(months) || isNaN(months) || months < 0) {
     return '0 months';
   }
 
@@ -64,7 +64,7 @@ export function formatMonthsAsYearsMonths(months: number): string {
     parts.push(`${remainingMonths} month${remainingMonths !== 1 ? 's' : ''}`);
   }
 
-  return parts.length > 0 ? parts.join(' ') : '0 months';
+  return parts.length > 0 ? parts.join(', ') : '0 months';
 }
 
 /**
@@ -77,4 +77,18 @@ export function formatMonthsAsYears(months: number, decimalPlaces = 2): string {
   }
 
   return (months / 12).toFixed(decimalPlaces) + ' years';
+}
+
+/**
+ * Format a date offset in months from now
+ * e.g., 0 -> "Jan 2024", 12 -> "Jan 2025"
+ */
+export function formatDate(monthsOffset: number): string {
+  const date = new Date();
+  date.setMonth(date.getMonth() + monthsOffset);
+  
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric'
+  });
 }

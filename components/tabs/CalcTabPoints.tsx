@@ -25,9 +25,13 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
   loanAmount,
   loanTerm,
 }) => {
+  // Helper function to get display name for scenario
+  const getScenarioDisplayName = (scenario: PointsScenario): string => {
+    return scenario.points === 0 ? '0 Points' : `${scenario.points}% Points`;
+  };
   // Calculate metrics for a single scenario
   const calculateScenarioMetrics = (scenario: PointsScenario, loanAmt: number, term: number): ComparisonResult => {
-    const monthlyRate = scenario.rate / 100 / 12;
+    const monthlyRate = (scenario.rate || 0) / 100 / 12;
     const totalPayments = term * 12;
 
     // Calculate monthly P&I
@@ -38,7 +42,7 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
           (Math.pow(1 + monthlyRate, totalPayments) - 1);
 
     // Calculate point cost
-    const pointCost = loanAmt * (scenario.points / 100);
+    const pointCost = loanAmt * ((scenario.points || 0) / 100);
 
     // Calculate total interest over loan life
     let remainingBalance = loanAmt;
@@ -249,9 +253,10 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
                   value={scenario.rate || ''}
                   onChange={(e) => {
                     const updated = [...scenarios];
-                    updated[index].rate = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                    updated[index].rate = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
                     setScenarios(updated);
                   }}
+                  placeholder="0"
                   className="w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                 />
               </div>
@@ -261,12 +266,13 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
                 <input
                   type="number"
                   step="0.125"
-                  value={scenario.points}
+                  value={scenario.points || ''}
                   onChange={(e) => {
                     const updated = [...scenarios];
-                    updated[index].points = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                    updated[index].points = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
                     setScenarios(updated);
                   }}
+                  placeholder="0"
                   className="w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -320,7 +326,7 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-blue-700 dark:text-blue-300">
-                        📍 {result.scenario.name} (Baseline)
+                        📍 {getScenarioDisplayName(result.scenario)} (Baseline)
                       </span>
                       <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
                         {formatCurrency(result.monthlyPI)}/mo
@@ -338,7 +344,7 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <span className="font-semibold text-gray-800 dark:text-gray-100">{result.scenario.name}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-100">{getScenarioDisplayName(result.scenario)}</span>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
                           {result.scenario.rate}% • {result.scenario.points}% points •{' '}
                           {formatCurrency(result.monthlyPI)}/mo
@@ -435,7 +441,7 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
                     }`}
                   >
                     <td className="p-3 border-b border-gray-100 dark:border-gray-700">
-                      <span className="font-medium text-gray-900 dark:text-gray-100">{result.scenario.name}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{getScenarioDisplayName(result.scenario)}</span>
                       {result.scenario.isBaseline && (
                         <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
                           Baseline
@@ -517,7 +523,7 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
                     If you keep the loan for 5 years:
                   </div>
                   <div className="text-green-700 dark:text-green-400">
-                    ✓ Choose <strong>{bestAt5.scenario.name}</strong> - Total cost:{' '}
+                    ✓ Choose <strong>{getScenarioDisplayName(bestAt5.scenario)}</strong> - Total cost:{' '}
                     {formatCurrency(bestAt5.totalCostAt5Years)}
                   </div>
                 </div>
@@ -526,7 +532,7 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
                     If you keep the loan for 10 years:
                   </div>
                   <div className="text-green-700 dark:text-green-400">
-                    ✓ Choose <strong>{bestAt10.scenario.name}</strong> - Total cost:{' '}
+                    ✓ Choose <strong>{getScenarioDisplayName(bestAt10.scenario)}</strong> - Total cost:{' '}
                     {formatCurrency(bestAt10.totalCostAt10Years)}
                   </div>
                 </div>
@@ -535,7 +541,7 @@ export const CalcTabPoints: React.FC<CalcTabPointsProps> = ({
                     If you keep the loan for the full {pointsCalcTerm}-year term:
                   </div>
                   <div className="text-green-700 dark:text-green-400">
-                    ✓ Choose <strong>{bestAtFull.scenario.name}</strong> - Total cost:{' '}
+                    ✓ Choose <strong>{getScenarioDisplayName(bestAtFull.scenario)}</strong> - Total cost:{' '}
                     {formatCurrency(bestAtFull.totalCostAtFullTerm)}
                   </div>
                 </div>

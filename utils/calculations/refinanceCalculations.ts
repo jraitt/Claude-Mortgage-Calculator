@@ -42,9 +42,9 @@ export function calculateRefinanceAnalysis(refInputs: RefinanceInputs): Refinanc
     refInputs.currentMonthlyPayment
   );
   // New loan amount (current balance + cash out + points cost + closing costs if included)
-  const pointsCost = refInputs.currentBalance * (refInputs.newPoints / 100);
+  const pointsCost = refInputs.currentBalance * ((refInputs.newPoints || 0) / 100);
   const closingCostsInLoan = refInputs.includeClosingCostsInLoan ? refInputs.closingCosts : 0;
-  const newLoanAmount = refInputs.currentBalance + refInputs.cashOut + pointsCost + closingCostsInLoan;
+  const newLoanAmount = refInputs.currentBalance + (refInputs.cashOut || 0) + pointsCost + closingCostsInLoan;
   const totalClosingCosts = refInputs.closingCosts + pointsCost;
 
   // Calculate new monthly payment

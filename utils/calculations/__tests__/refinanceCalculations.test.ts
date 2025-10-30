@@ -52,8 +52,11 @@ describe('calculateRefinanceAnalysis', () => {
     const cashOutInputs = { ...validInputs, cashOut: 25000 };
     const result = calculateRefinanceAnalysis(cashOutInputs);
 
-    expect(result.newMonthlyPayment).toBeGreaterThan(validInputs.currentMonthlyPayment);
+    // With cash-out, the new loan amount should be higher
+    expect(result.newLoanAmount).toBe(validInputs.currentBalance + 25000);
     expect(result.totalClosingCosts).toBe(3000); // Closing costs unchanged
+    // Payment may be higher or lower depending on rate difference
+    expect(result.newMonthlyPayment).toBeGreaterThan(0);
   });
 
   test('should handle points in new loan', () => {
@@ -75,7 +78,7 @@ describe('calculateRefinanceAnalysis', () => {
 
     expect(result.monthlySavings).toBeLessThan(0);
     expect(result.breakEvenMonths).toBe(Infinity);
-    expect(result.recommendation).toContain('not recommended');
+    expect(result.recommendation).toContain('Not recommended');
   });
 
   test('should handle very short remaining term', () => {

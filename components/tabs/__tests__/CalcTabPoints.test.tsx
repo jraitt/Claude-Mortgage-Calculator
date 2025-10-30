@@ -120,14 +120,17 @@ describe('CalcTabPoints', () => {
     render(<CalcTabPoints {...defaultProps} />);
     
     // Should render scenario names or related content
-    // The exact text depends on the component implementation
-    expect(screen.getByText('Baseline')).toBeInTheDocument();
+    // Use getAllByText since "Baseline" appears multiple times (in scenario name and badge)
+    const baselineElements = screen.getAllByText('Baseline');
+    expect(baselineElements.length).toBeGreaterThan(0);
   });
 
   test('should display help text for loan amount', () => {
     render(<CalcTabPoints {...defaultProps} />);
     
-    expect(screen.getByText(/Default from Calculator tab/)).toBeInTheDocument();
+    // Use getAllByText since "Default from Calculator tab" appears multiple times
+    const helpTexts = screen.getAllByText(/Default from Calculator tab/);
+    expect(helpTexts.length).toBeGreaterThan(0);
   });
 
   test('should handle empty scenarios array', () => {
@@ -147,10 +150,19 @@ describe('CalcTabPoints', () => {
     render(<CalcTabPoints {...defaultProps} />);
     
     expect(screen.getByText('Invalid Input Detected')).toBeInTheDocument();
-    expect(screen.getByText('Loan amount is too small')).toBeInTheDocument();
+    // Use getAllByText since error message appears in both the error banner and field error
+    const errorMessages = screen.getAllByText('Loan amount is too small');
+    expect(errorMessages.length).toBeGreaterThan(0);
   });
 
   test('should not display validation errors when inputs are valid', () => {
+    // Ensure validation returns valid state
+    const mockValidation = require('../../../utils/validation');
+    mockValidation.validatePointsInputs.mockReturnValue({
+      isValid: true,
+      errors: [],
+    });
+
     render(<CalcTabPoints {...defaultProps} />);
     
     expect(screen.queryByText('Invalid Input Detected')).not.toBeInTheDocument();
