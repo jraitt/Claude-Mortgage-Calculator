@@ -240,7 +240,7 @@ TASK-006 currently lacks suggestions for the **Refinance Calculator** tab, which
 ### Implementation Approach
 
 #### Phase 1: Foundation (2-3 hours)
-1. Install Recharts: `npm install recharts`
+1. Install Recharts: `docker compose exec mortgage-calculator npm install recharts`
 2. Create shared chart components in `components/shared/charts/`
    - `LineChart.tsx` - Reusable line chart wrapper
    - `BarChart.tsx` - Reusable bar chart wrapper
