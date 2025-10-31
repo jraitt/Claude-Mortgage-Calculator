@@ -1,6 +1,6 @@
 # TASK.md
 
-**Last Updated**: 2025-10-29
+**Last Updated**: 2025-10-30
 
 This file tracks all tasks for the Claude Mortgage Calculator project. Tasks are organized by status and priority.
 
@@ -201,30 +201,119 @@ utils/
 
 ### TASK-006: Add Chart Visualizations
 **Added**: 2025-10-12
-**Updated**: 2025-10-24
+**Updated**: 2025-10-30
 **Status**: 🟡 Not Started
 **Priority**: Medium
-**Effort**: Medium (1 day)
+**Effort**: Medium-Large (2-2.5 days / 13-18 hours)
 
-**Description**: Add visual charts to help users understand paydown strategies and interest breakdown. These can now be added as standalone components to specific tabs.
+**Description**: Add comprehensive visual charts across all 4 calculator tabs to help users understand mortgage comparisons, paydown strategies, interest breakdown, and refinance analysis. Charts will transform complex tabular data into intuitive visualizations.
 
-**Recommended Approach After Refactoring**:
-- Add charts as new components in `components/shared/`
-- Import into relevant tab components (CalcTabNewMortgage, CalcTabExistingMortgage)
-- Use existing calculation hooks for data
+**Review Document**: See `TASK-006-COMPREHENSIVE-REVIEW.md` for complete analysis and specifications.
+
+**Critical Finding**: Previous version of this task missed the **Refinance Calculator** and **Points Calculator** tabs, which have the highest potential for impactful visualizations!
+
+**Implementation Approach**:
+- Use **Recharts** library (React-native, TypeScript-friendly, responsive)
+- Create shared chart components in `components/shared/charts/`
+- Import into tab components and use existing calculation hooks for data
+- Ensure full dark mode support and mobile responsiveness
+- Add tooltips with formatted currency values
+
+**Priority Order by Tab**:
+1. ⭐⭐⭐ **Refinance Calculator** (3-4 hours) - HIGHEST IMPACT
+   - Most compelling visual story (before/after comparison)
+   - Helps users make expensive financial decisions
+   - Clear break-even visualization
+2. ⭐⭐ **Existing Mortgage** (2-3 hours) - Shows dramatic savings
+3. ⭐⭐ **Points Calculator** (2-3 hours) - Makes complex decisions intuitive
+4. ⭐ **New Mortgage** (2-3 hours) - Foundation understanding
+
+**Component Structure**:
+```
+components/shared/charts/
+├── BaseLineChart.tsx       # Reusable line chart wrapper
+├── BaseBarChart.tsx        # Reusable bar chart wrapper
+├── BasePieChart.tsx        # Reusable pie/donut chart
+├── BaseAreaChart.tsx       # Reusable area chart
+├── ChartContainer.tsx      # Common wrapper with title/legend
+└── index.ts                # Chart exports
+```
 
 **Acceptance Criteria**:
-- [ ] Research lightweight chart library (Chart.js, Recharts, or visx)
-- [ ] Add dependency to `package.json`
-- [ ] Create `<PrincipalVsInterestChart />` component - pie chart
-- [ ] Create `<PaydownComparisonChart />` component - bar chart
-- [ ] Create `<BalanceOverTimeChart />` component - line chart
-- [ ] Add charts to appropriate tabs:
-  - New Mortgage tab: Principal vs Interest pie
-  - Existing Mortgage tab: Paydown comparison bars, Balance over time
-- [ ] Ensure charts work with dark mode
-- [ ] Make charts responsive
+
+**Foundation (2-3 hours)**:
+- [ ] Install Recharts: `docker compose exec mortgage-calculator npm install recharts`
+- [ ] Create `components/shared/charts/` directory
+- [ ] Create base chart components (Line, Bar, Pie, Area)
+- [ ] Create ChartContainer wrapper with dark mode support
+- [ ] Set up chart color palette for light/dark themes
+- [ ] Create data transformation utilities in `utils/chartData.ts`
+
+**Refinance Calculator Tab (3-4 hours)** ⭐ HIGHEST PRIORITY:
+- [ ] Add Monthly Payment Comparison (side-by-side bar chart)
+- [ ] Add Balance Over Time Comparison (dual-line chart)
+- [ ] Add Cumulative Interest Comparison (dual-line chart)
+- [ ] Add Total Cost Breakdown (stacked bar chart: principal + interest + closing costs)
+- [ ] Add Break-Even Timeline Visualization (milestone chart)
+- [ ] Add Cost at Time Horizons (5, 10 years, full term - grouped bars)
+- [ ] Test all charts on mobile devices
+- [ ] Add collapsible chart sections
+
+**Existing Mortgage Tab (2-3 hours)**:
+- [ ] Add Paydown Strategy Comparison (grouped bar chart)
+- [ ] Add Balance Comparison Over Time (multi-line chart)
+- [ ] Add Interest Savings Visualization (waterfall or stacked bars)
+- [ ] Add Time Saved Progress Bar/Timeline
+- [ ] Test charts on mobile
+
+**Points Calculator Tab (2-3 hours)** ⭐ NEW:
+- [ ] Add Cost Comparison at Time Horizons (5, 10, full term - grouped bars)
+- [ ] Add Break-Even Timeline (horizontal bar chart)
+- [ ] Add Monthly Payment Comparison (bar chart)
+- [ ] Add Cumulative Cost Over Time (multi-line chart - optional)
+- [ ] Test charts on mobile
+
+**New Mortgage Tab (2-3 hours)**:
+- [ ] Add Principal vs Interest Breakdown (pie/donut chart)
+- [ ] Add Balance Over Time (line chart)
+- [ ] Add Payment Breakdown Over Time (stacked area chart)
+- [ ] Add Cumulative Interest Paid (line chart - optional)
+- [ ] Test charts on mobile
+
+**Quality & Polish (2-3 hours)**:
+- [ ] Ensure all charts work with dark mode
+- [ ] Verify responsive design on all screen sizes
+- [ ] Add tooltips with formatted values to all charts
+- [ ] Add ARIA labels for accessibility
+- [ ] Optimize performance with useMemo for data transformations
+- [ ] Add loading states for chart rendering
+- [ ] Test with large datasets (360+ month schedules)
 - [ ] Add chart components to shared exports
+- [ ] Update documentation (CLAUDE.md, README.md)
+
+**Chart Features Standard**:
+- Responsive design (desktop, tablet, mobile)
+- Dark mode support with theme-aware colors
+- Interactive tooltips with precise values
+- Accessibility (ARIA labels, color-blind friendly)
+- Performance optimized (memoized data)
+- Consistent styling across all charts
+
+**Recommended Chart Library**: Recharts
+- React-native with excellent hooks support
+- TypeScript-friendly
+- Responsive and mobile-ready
+- Dark mode compatible
+- Lightweight (~100kb)
+- All needed chart types available
+
+**Estimated Impact**:
+- **User Experience**: Complex financial data becomes immediately understandable
+- **Decision Support**: Visual comparisons make trade-offs obvious
+- **Engagement**: Interactive visualizations keep users engaged
+- **Competitive Advantage**: Most mortgage calculators lack comprehensive visualizations
+
+**Note**: See `TASK-006-COMPREHENSIVE-REVIEW.md` for detailed specifications, color palettes, implementation phases, and 19 specific chart recommendations.
 
 ---
 
@@ -522,7 +611,9 @@ The completion of TASK-001 (refactoring) and TASK-110 (branding/CSV) have signif
 3. ✅ **TASK-003** - Expand input validation (COMPLETE!)
 4. ✅ **TASK-002** - Expand testing coverage (COMPLETE!)
 5. ✅ **TASK-004** - Improve mobile responsiveness (COMPLETE!)
-6. **TASK-006** - Add chart visualizations (Can add as isolated components)
+6. **TASK-006** - Add chart visualizations across all 4 tabs (Now includes Refinance & Points calculators!)
+   - Start with Refinance tab charts (highest impact)
+   - See `TASK-006-COMPREHENSIVE-REVIEW.md` for 19 specific chart recommendations
 7. **TASK-005** - Add print styles (Medium priority)
 8. **TASK-008** - Accessibility audit & improvements (Low priority)
 
@@ -540,4 +631,4 @@ The completion of TASK-001 (refactoring) and TASK-110 (branding/CSV) have signif
 
 ---
 
-Last Updated: 2025-10-24
+Last Updated: 2025-10-30
