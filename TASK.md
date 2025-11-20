@@ -202,7 +202,7 @@ utils/
 ### TASK-006: Add Chart Visualizations
 **Added**: 2025-10-12
 **Updated**: 2025-10-30
-**Status**: 🟡 Not Started
+**Status**: 🔵 In Progress (Foundation Complete)
 **Priority**: Medium
 **Effort**: Medium-Large (2-2.5 days / 13-18 hours)
 
@@ -241,23 +241,50 @@ components/shared/charts/
 
 **Acceptance Criteria**:
 
-**Foundation (2-3 hours)**:
-- [ ] Install Recharts: `docker compose exec mortgage-calculator npm install recharts`
-- [ ] Create `components/shared/charts/` directory
-- [ ] Create base chart components (Line, Bar, Pie, Area)
-- [ ] Create ChartContainer wrapper with dark mode support
-- [ ] Set up chart color palette for light/dark themes
-- [ ] Create data transformation utilities in `utils/chartData.ts`
+**Foundation (2-3 hours)**: ✅ COMPLETE
+- [x] Install Recharts: `docker compose exec mortgage-calculator npm install recharts`
+- [x] Create `components/shared/charts/` directory
+- [x] Create base chart components (Line, Bar, Pie, Area)
+- [x] Create ChartContainer wrapper with dark mode support
+- [x] Set up chart color palette for light/dark themes
+- [x] Create data transformation utilities in `utils/chartData.ts`
 
-**Refinance Calculator Tab (3-4 hours)** ⭐ HIGHEST PRIORITY:
-- [ ] Add Monthly Payment Comparison (side-by-side bar chart)
-- [ ] Add Balance Over Time Comparison (dual-line chart)
+**Foundation Implementation Complete** (2025-10-30):
+- ✅ **Recharts v2.10.0** installed and added to package.json
+- ✅ **Chart Components Created**:
+  - `BaseLineChart.tsx` - Multi-line charts with custom formatting and tooltips
+  - `BaseBarChart.tsx` - Horizontal/vertical bars with stacking support
+  - `BasePieChart.tsx` - Pie and donut charts with percentage labels
+  - `BaseAreaChart.tsx` - Stacked area charts with custom opacity
+- ✅ **ChartContainer.tsx** - Reusable wrapper with dark mode integration
+- ✅ **Color System**: Comprehensive light/dark theme palettes with semantic colors
+- ✅ **Data Transformations** (`utils/chartData.ts`):
+  - `transformBalanceOverTime()` - Balance progression
+  - `transformPrincipalVsInterest()` - Pie chart data
+  - `transformPaymentBreakdown()` - Stacked area data
+  - `transformCumulativeInterest()` - Cumulative interest
+  - `transformScheduleComparison()` - Dual schedule comparison
+  - `transformPaydownComparison()` - Strategy comparison
+  - `transformPointsComparison()` - Points calculator data
+  - `transformRefinanceComparison()` - Refinance analysis data
+  - `sampleData()` - Intelligent data sampling for performance
+- ✅ **Export Module**: `components/shared/charts/index.ts` with TypeScript types
+- ✅ **Build Status**: Docker build successful, TypeScript errors resolved
+- ✅ **Features**: Dark mode support, responsive design, custom tooltips, type-safe
+
+**Refinance Calculator Tab (3-4 hours)** ⭐ HIGHEST PRIORITY - IN PROGRESS:
+- [x] Add Monthly Payment Comparison (side-by-side bar chart) ✅
+- [x] Add Balance Over Time Comparison (dual-line chart) ✅
 - [ ] Add Cumulative Interest Comparison (dual-line chart)
 - [ ] Add Total Cost Breakdown (stacked bar chart: principal + interest + closing costs)
 - [ ] Add Break-Even Timeline Visualization (milestone chart)
 - [ ] Add Cost at Time Horizons (5, 10 years, full term - grouped bars)
 - [ ] Test all charts on mobile devices
 - [ ] Add collapsible chart sections
+
+**Completed Charts (2025-10-30)**:
+- ✅ **Monthly Payment Comparison**: Side-by-side bar chart showing current vs new monthly payment with color-coded bars (red for current, blue for new)
+- ✅ **Balance Over Time Comparison**: Dual-line chart tracking how loan balances decrease over time for both current and new loans, with intelligent data sampling for performance
 
 **Existing Mortgage Tab (2-3 hours)**:
 - [ ] Add Paydown Strategy Comparison (grouped bar chart)

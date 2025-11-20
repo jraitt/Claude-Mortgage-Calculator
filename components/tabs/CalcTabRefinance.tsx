@@ -3,6 +3,8 @@ import { RefinanceInputs, RefinanceResult } from '../MortgageCalculator';
 import { calculateRefinanceAnalysis } from '../../utils/calculations/refinanceCalculations';
 import { formatCurrency, formatMonthsAsYearsMonths } from '../../utils/formatting';
 import { SummaryCard, FormField } from '../shared';
+import { ChartContainer, BaseBarChart, BaseLineChart } from '../shared/charts';
+import { transformScheduleComparison } from '../../utils/chartData';
 
 interface CalcTabRefinanceProps {
   refinanceInputs: RefinanceInputs;
@@ -50,7 +52,10 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
         principal: principalPayment,
         interest: interestPayment,
         balance: currentBalance,
-        totalInterest
+        totalInterest,
+        extraPrincipal: 0,
+        pmi: 0,
+        escrow: 0
       });
     }
 
@@ -77,7 +82,10 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
         principal: principalPayment,
         interest: interestPayment,
         balance: newBalance,
-        totalInterest: newTotalInterest
+        totalInterest: newTotalInterest,
+        extraPrincipal: 0,
+        pmi: 0,
+        escrow: 0
       });
     }
 
@@ -480,6 +488,57 @@ export const CalcTabRefinance: React.FC<CalcTabRefinanceProps> = ({
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Visual Comparison Charts */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Visual Comparison</h2>
+
+        {/* Monthly Payment Comparison */}
+        <ChartContainer title="Monthly Payment Comparison" height={300}>
+          <BaseBarChart
+            data={[
+              {
+                name: 'Monthly Payment',
+                'Current Loan': refinanceInputs.currentMonthlyPayment,
+                'New Loan': refinanceResult.newMonthlyPayment,
+              },
+            ]}
+            bars={[
+              { dataKey: 'Current Loan', name: 'Current Loan', color: '#ef4444' },
+              { dataKey: 'New Loan', name: 'New Loan', color: '#3b82f6' },
+            ]}
+            formatYAxis={(value) => `$${(value / 1000).toFixed(1)}k`}
+            formatTooltip={(value) => formatCurrency(value)}
+            height={300}
+          />
+        </ChartContainer>
+
+        {/* Balance Over Time Comparison */}
+        <ChartContainer title="Balance Over Time Comparison" height={400}>
+          <BaseLineChart
+            data={useMemo(() => {
+              // Convert schedule data to format needed for the chart
+              const scheduleData = transformScheduleComparison(
+                currentSchedule,
+                newSchedule,
+                'Current Loan',
+                'New Loan',
+                50
+              );
+              return scheduleData;
+            }, [currentSchedule, newSchedule])}
+            lines={[
+              { dataKey: 'Current Loan', name: 'Current Loan', color: '#ef4444', strokeWidth: 3 },
+              { dataKey: 'New Loan', name: 'New Loan', color: '#3b82f6', strokeWidth: 3 },
+            ]}
+            xAxisLabel="Time"
+            yAxisLabel="Balance"
+            formatYAxis={(value) => `$${(value / 1000).toFixed(0)}k`}
+            formatTooltip={(value) => formatCurrency(value)}
+            height={400}
+          />
+        </ChartContainer>
       </div>
 
       {/* Amortization Schedule Comparison Section - Full Width */}
